@@ -144,6 +144,8 @@ _SECURITY_TITLES = {
     "FACE_FAILED": "Verifikasi wajah gagal",
     "PASSWORD_RESET": "PIN direset",
     "PHONE_CHANGED": "Nomor HP diubah",
+    "EMAIL_VERIFIED": "Email diverifikasi",
+    "EMAIL_CHANGED": "Email diubah",
 }
 
 

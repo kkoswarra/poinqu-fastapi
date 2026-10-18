@@ -327,7 +327,9 @@ def create_trusted_login_token(
     return raw
 
 
-def verify_otp(db: Session, session_public_id: str, code: str) -> tuple[VerificationToken, str]:
+def verify_otp_code(db: Session, session_public_id: str, code: str) -> OtpSession:
+    """Validasi kode OTP dan tandai sesi verified tanpa membuat token baru."""
+
     session = db.scalar(select(OtpSession).where(OtpSession.public_id == session_public_id))
     if session is None or session.verified_at is not None or session.cancelled_at is not None:
         raise AppError("OTP_SESSION_NOT_FOUND")
@@ -368,6 +370,12 @@ def verify_otp(db: Session, session_public_id: str, code: str) -> tuple[Verifica
         raise AppError("OTP_INVALID", details={"attempts_left": attempts_left})
 
     session.verified_at = now
+    db.flush()
+    return session
+
+
+def verify_otp(db: Session, session_public_id: str, code: str) -> tuple[VerificationToken, str]:
+    session = verify_otp_code(db, session_public_id, code)
     verification, raw = issue_verification(db, session)
     db.flush()
     return verification, raw

@@ -197,7 +197,13 @@ class PinChangeIn(BaseModel):
 
 class PinVerifyIn(BaseModel):
     pin: Pin6
-    purpose: Literal["TRANSACTION", "POINT_REDEEM", "ENROLL_BIOMETRIC"]
+    purpose: Literal[
+        "TRANSACTION",
+        "POINT_REDEEM",
+        "ENROLL_BIOMETRIC",
+        "CHANGE_PHONE",
+        "CHANGE_EMAIL",
+    ]
     preview_id: Annotated[str | None, Field(default=None, max_length=64)] = None
     reward_id: Annotated[str | None, Field(default=None, max_length=64)] = None
 
@@ -208,6 +214,25 @@ class PinVerifyIn(BaseModel):
         if self.purpose == "POINT_REDEEM" and not self.reward_id:
             raise ValueError("REQUIRED")
         return self
+
+
+class EmailVerificationVerifyIn(BaseModel):
+    otp_session_id: Annotated[str, Field(min_length=1, max_length=64)]
+    code: OtpCode
+
+
+class PhoneChangeRequestIn(BaseModel):
+    new_phone: Phone
+
+
+class EmailChangeRequestIn(BaseModel):
+    new_email: EmailStr
+
+
+class ContactChangeConfirmIn(BaseModel):
+    change_id: Annotated[str, Field(min_length=1, max_length=64)]
+    otp_session_id: Annotated[str, Field(min_length=1, max_length=64)]
+    code: OtpCode
 
 
 # -------------------------------------------------------------- biometric

@@ -133,6 +133,12 @@ ERRORS: dict[str, ErrorDef] = {
     "KTP_DATA_MISMATCH": ErrorDef(422, "NIK atau nama tidak sesuai dengan foto KTP."),
     "NAME_LOCKED": ErrorDef(409, "Nama tidak bisa diubah setelah KTP terverifikasi."),
     "EMAIL_ALREADY_USED": ErrorDef(409, "Email sudah dipakai akun lain."),
+    "EMAIL_ALREADY_VERIFIED": ErrorDef(409, "Email sudah terverifikasi."),
+    "EMAIL_NOT_SET": ErrorDef(409, "Email belum diatur."),
+    "EMAIL_SAME_AS_CURRENT": ErrorDef(422, "Email baru sama dengan email lama."),
+    "CONTACT_CHANGE_NOT_FOUND": ErrorDef(404, "Permintaan perubahan kontak tidak ditemukan."),
+    "CONTACT_CHANGE_EXPIRED": ErrorDef(410, "Permintaan perubahan kontak sudah kedaluwarsa."),
+    "CONTACT_CHANGE_ALREADY_USED": ErrorDef(409, "Permintaan perubahan kontak sudah dipakai."),
     # --- perangkat ---
     "DEVICE_NOT_FOUND": ErrorDef(404, "Perangkat tidak ditemukan."),
     "CANNOT_REMOVE_CURRENT_DEVICE": ErrorDef(409, "Perangkat yang sedang dipakai tidak bisa dikeluarkan."),
