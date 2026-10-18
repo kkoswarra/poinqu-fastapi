@@ -23,6 +23,8 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ## 1. Database & migrasi
 
+**Status:** selesai untuk schema (CI hijau, 19 Oktober 2026). Validation/API email menyusul Sprint 3.
+
 - [x] `users.email` wajib untuk user baru; data lama boleh `NULL` (validasi API menyusul Sprint 3).
 - [x] Tambah `users.email_verified_at`.
 - [x] Unique index `lower(email)` untuk email tidak null.
