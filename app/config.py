@@ -81,7 +81,11 @@ class Settings:
     RECOVERY_ATTEMPT_WINDOW: int = _env_int("RECOVERY_ATTEMPT_WINDOW", 86_400)
 
     # Avatar
-    AVATAR_DIR: str = os.getenv("AVATAR_DIR", "media/avatars")
+    # Vercel hanya mengizinkan tulis di /tmp (ephemeral). Untuk produksi,
+    # ganti ke object storage (Vercel Blob/S3).
+    AVATAR_DIR: str = os.getenv(
+        "AVATAR_DIR", "/tmp/avatars" if os.getenv("VERCEL") else "media/avatars"
+    )
     AVATAR_MAX_BYTES: int = _env_int("AVATAR_MAX_BYTES", 5 * 1024 * 1024)
     MEDIA_BASE_URL: str = os.getenv("MEDIA_BASE_URL", "").rstrip("/")
 

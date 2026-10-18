@@ -24,7 +24,17 @@ def _engine_kwargs(url: str) -> dict:
     return {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 20}
 
 
-engine = create_engine(settings.DATABASE_URL, **_engine_kwargs(settings.DATABASE_URL))
+def normalize_database_url(url: str) -> str:
+    """Neon/Vercel memberi ``postgresql://``; SQLAlchemy butuh driver psycopg3."""
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
+
+
+DATABASE_URL = normalize_database_url(settings.DATABASE_URL)
+engine = create_engine(DATABASE_URL, **_engine_kwargs(DATABASE_URL))
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 

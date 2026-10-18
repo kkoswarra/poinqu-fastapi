@@ -302,6 +302,31 @@ FONNTE_ALLOWED_IPS=            # opsional, pisahkan koma
 - Daftarkan URL di dashboard Fonnte:
   `https://<host>/v1/webhooks/fonnte/<secret>/status` dan `.../device`.
 
+## Deploy ke Vercel
+
+Production: **https://poinqu-backend.vercel.app**
+
+- Vercel mendeteksi FastAPI lewat `main.py` di root (`from app.main import app`);
+  region `sin1`, `maxDuration` 60 detik (`vercel.json`).
+- Database: **Neon Postgres** dan **Upstash Redis** lewat Vercel Marketplace;
+  `DATABASE_URL` dan `REDIS_URL` di-inject otomatis.
+- Environment manual yang perlu ada: `JWT_SECRET`, `ENVIRONMENT=production`,
+  `DEBUG=false`, `ADMIN_*`, `OTP_PROVIDER=fonnte`, `FONNTE_TOKEN`,
+  `FONNTE_WEBHOOK_SECRET`, `CORS_ORIGINS`, `MEDIA_BASE_URL`.
+- Skema database dibuat sekali; produksi memakai `AUTO_CREATE_TABLES=false`.
+- Webhook Fonnte:
+  `https://poinqu-backend.vercel.app/v1/webhooks/fonnte/<FONNTE_WEBHOOK_SECRET>/status`
+  dan `.../device`.
+- Kredensial admin yang digenerate saat deploy ada di `.env.vercel.production`
+  (lokal, sudah di-ignore) dan di Vercel Environment Variables tipe Config.
+- Avatar di Vercel memakai `/tmp/avatars` dan **ephemeral**; pindahkan ke
+  Vercel Blob/S3 untuk produksi.
+- Preview deployment memakai Deployment Protection; alias production publik.
+  Cold start ±15 detik, request hangat ±0,3 detik (Fluid Compute).
+- Deploy ini dibuat dari CLI lokal. Project Vercel terhubung ke repo GitHub
+  `poinqu-backend` (masih template); untuk auto-deploy berikutnya, hubungkan
+  repo `poinqu-fastapi` ke project atau push kode ke repo yang terhubung.
+
 ## Format respons
 
 Sukses:

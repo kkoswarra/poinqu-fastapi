@@ -11,3 +11,9 @@ htmlcov/
 media/
 *.db
 *.sqlite3
+
+.vercel
+.env*
+!.env.example
+.agents/
+skills-lock.json
