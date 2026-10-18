@@ -2,6 +2,15 @@
 
 Versi dokumen 0.3 · 18 Oktober 2026 · pelengkap `PLAN.md` v0.4
 
+> **Status:** kontrak **baseline Fase 2** yang sudah berjalan.
+>
+> Perubahan setelah pivot ke pulsa/PPOB — auth email/nomor HP, hapus biometric
+> wajah, hapus recovery di app, dan perubahan nomor/email — diatur di
+> **`FASE-2.1-PIVOT.md`**. Jika ada pertentangan, **FASE-2.1 menang** untuk
+> area yang tercakup.
+>
+> Indeks dokumen: `docs/README.md`. Log keputusan: `docs/DECISIONS.md`.
+
 Dokumen ini adalah kontrak API Fase 2. Path, nama field, dan bentuk respons **diambil dari kode app React Native** (`src/api/endpoints/*`, `src/api/types/*`, `src/lib/errors.ts`) supaya app cukup mematikan `USE_MOCK` tanpa perubahan lain. Hal yang tidak ada di app (skema database, endpoint admin, kode error tambahan, angka konfigurasi) ditandai **[usulan]**.
 
 Isi: (1) konvensi, (2) daftar lengkap kode error, (3) skema database, (4) endpoint beserta respons sukses dan gagal (bagian H: integrasi WhatsApp gateway Fonnte, H.7: perubahan hasil review yang menggantikan bagian yang bertentangan).

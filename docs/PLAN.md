@@ -1,5 +1,10 @@
 # Rencana Pembangunan Dompet Digital (E-Wallet)
 
+> **Catatan pivot 18 Oktober 2026:** arah produk sedang dipivot dari dompet
+> digital menjadi **penjualan pulsa & PPOB**. Lihat `FASE-2.1-PIVOT.md` dan
+> `DECISIONS.md`. Bagian dompet, transfer, dan KYC di dokumen ini belum final
+> sampai keputusan D-10 selesai; jangan dianggap kontrak implementasi.
+>
 > Status: **Draft v0.4** — dokumen hidup, direvisi tiap fase.
 > Perubahan v0.4: **koreksi limit** (PBI 20/6/PBI/2018 sudah dinaikkan oleh PADG 24/7/2022: saldo premium Rp20jt, dana masuk premium Rp40jt/bulan); kanal transfer ke bank = **BI-FAST** (bagian 2.2); semua pertanyaan terbuka diisi **rekomendasi default** (bagian 13); catatan aturan baru PBI 10/2025 & PADG 32/2025 (berlaku 31 Maret 2026).
 > Perubahan v0.3: aturan limit dan kepatuhan mengacu pada regulasi BI tentang Uang Elektronik.
