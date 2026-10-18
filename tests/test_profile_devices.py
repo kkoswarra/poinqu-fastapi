@@ -5,10 +5,7 @@ from __future__ import annotations
 import io
 
 from PIL import Image
-from sqlalchemy import select
 
-from app.db import SessionLocal
-from app.models import KycStatus, User
 from tests.conftest import (
     DEVICE_A,
     DEVICE_B,
@@ -57,7 +54,7 @@ def test_access_with_wrong_device_header_is_rejected() -> None:
     assert response.json()["code"] == "DEVICE_MISMATCH"
 
 
-def test_profile_update_rejects_email_and_name_lock() -> None:
+def test_profile_update_rejects_email_and_allows_name() -> None:
     first = register()
     access = first["tokens"]["access_token"]
 
@@ -77,18 +74,13 @@ def test_profile_update_rejects_email_and_name_lock() -> None:
     assert response.status_code == 422
     assert response.json()["code"] == "INVALID_VALUE"
 
-    with SessionLocal() as db:
-        user = db.scalar(select(User).where(User.phone == "081234567890"))
-        user.kyc_status = KycStatus.VERIFIED
-        db.commit()
-
     response = client.patch(
         "/v1/me",
         json={"name": "Nama Lain"},
         headers=auth_headers(access),
     )
-    assert response.status_code == 409
-    assert response.json()["code"] == "NAME_LOCKED"
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["name"] == "Nama Lain"
 
 
 def test_patch_profile_requires_at_least_one_field() -> None:

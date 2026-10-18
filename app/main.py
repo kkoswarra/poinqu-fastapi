@@ -34,7 +34,7 @@ from app.core.errors import (
 )
 from app.core.openapi import build_openapi
 from app.db import SessionLocal, init_schema
-from app.routers import admin, auth, me, recovery, webhooks
+from app.routers import admin, auth, me, webhooks
 from app.services import email as email_service
 from app.services import wa
 from app.services.admin import ensure_seed
@@ -144,7 +144,6 @@ async def request_context(request: Request, call_next):
 
 
 app.include_router(auth.router, prefix=settings.API_PREFIX)
-app.include_router(recovery.router, prefix=settings.API_PREFIX)
 app.include_router(me.router, prefix=settings.API_PREFIX)
 app.include_router(admin.router, prefix=settings.API_PREFIX)
 app.include_router(webhooks.router, prefix=settings.API_PREFIX)

@@ -91,7 +91,7 @@ def verify_login(
             record_security_event(
                 db,
                 user,
-                "FACE_FAILED" if challenge.type == BiometricType.FACE else "PIN_FAILED",
+                "PIN_FAILED",
                 SecuritySeverity.HIGH,
                 device=device,
                 description="Biometrik gagal berulang; dinonaktifkan sementara.",
@@ -103,15 +103,6 @@ def verify_login(
                 retry_after=settings.BIOMETRIC_LOCK_SECONDS,
             )
         db.flush()
-        if challenge.type == BiometricType.FACE:
-            record_security_event(
-                db,
-                user,
-                "FACE_FAILED",
-                SecuritySeverity.MEDIUM,
-                device=device,
-                description="Verifikasi wajah gagal.",
-            )
         db.commit()
         raise AppError("BIOMETRIC_SIGNATURE_INVALID")
 
@@ -121,17 +112,6 @@ def verify_login(
     db.flush()
 
 
-def check_liveness(liveness_session_id: str) -> None:
-    """Mock penyedia liveness untuk Fase 2.
-
-    ``lv_`` diterima; ``lv_fail`` mensimulasikan liveness gagal.
-    """
-    if liveness_session_id == "lv_fail":
-        raise AppError("FACE_LIVENESS_FAILED")
-    if not liveness_session_id.startswith("lv_"):
-        raise AppError("LIVENESS_SESSION_INVALID")
-
-
 def register_biometric(
     db: Session,
     *,
@@ -139,17 +119,15 @@ def register_biometric(
     device: Device,
     kind: BiometricType,
     public_key: str,
-    liveness_session_id: str | None = None,
 ) -> UserBiometric:
+    if kind != BiometricType.FINGERPRINT:
+        raise AppError("INVALID_BIOMETRIC_TYPE")
+
     existing = get_biometric(db, user, device, kind)
     if existing is not None:
         raise AppError("BIOMETRIC_ALREADY_REGISTERED")
 
     validate_ec_public_key(public_key)
-    if kind == BiometricType.FACE:
-        if not liveness_session_id:
-            raise AppError("LIVENESS_SESSION_INVALID")
-        check_liveness(liveness_session_id)
 
     biometric = UserBiometric(
         user_id=user.id,
@@ -166,7 +144,6 @@ def register_biometric(
 def biometrics_status(db: Session, user: User, device: Device) -> dict:
     result = {
         "fingerprint": {"registered": False, "registered_at": None},
-        "face": {"registered": False, "registered_at": None},
         "use_for_login": user.biometric_login,
     }
     rows = db.scalars(
@@ -176,8 +153,11 @@ def biometrics_status(db: Session, user: User, device: Device) -> dict:
         )
     ).all()
     for row in rows:
-        key = "fingerprint" if row.type == BiometricType.FINGERPRINT else "face"
-        result[key] = {"registered": True, "registered_at": to_iso(row.registered_at)}
+        if row.type == BiometricType.FINGERPRINT:
+            result["fingerprint"] = {
+                "registered": True,
+                "registered_at": to_iso(row.registered_at),
+            }
     return result
 
 

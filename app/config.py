@@ -93,11 +93,6 @@ class Settings:
     BIOMETRIC_MAX_FAILED: int = _env_int("BIOMETRIC_MAX_FAILED", 5)
     BIOMETRIC_LOCK_SECONDS: int = _env_int("BIOMETRIC_LOCK_SECONDS", 900)
 
-    # Pemulihan nomor
-    RECOVERY_TTL: int = _env_int("RECOVERY_TTL", 900)
-    RECOVERY_MAX_ATTEMPTS: int = _env_int("RECOVERY_MAX_ATTEMPTS", 3)
-    RECOVERY_ATTEMPT_WINDOW: int = _env_int("RECOVERY_ATTEMPT_WINDOW", 86_400)
-
     # Avatar
     # Vercel hanya mengizinkan tulis di /tmp (ephemeral). Untuk produksi,
     # ganti ke object storage (Vercel Blob/S3).

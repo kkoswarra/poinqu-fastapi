@@ -7,7 +7,6 @@ model ``ApiResponse``/``ErrorResponse`` dipakai untuk dokumentasi OpenAPI.
 from __future__ import annotations
 
 import re
-from datetime import date
 from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints, model_validator
@@ -28,7 +27,7 @@ Pin6 = Annotated[str, StringConstraints(pattern=r"^\d{6}$")]
 OtpCode = Annotated[str, StringConstraints(pattern=r"^\d{6}$")]
 Gender = Literal["MALE", "FEMALE"]
 Platform = Literal["IOS", "ANDROID", "WEB"]
-BiometricKind = Literal["FINGERPRINT", "FACE"]
+BiometricKind = Literal["FINGERPRINT"]
 OtpPurposeIn = Literal["LOGIN", "REGISTER", "FORGOT_PIN", "CHANGE_PHONE"]
 
 
@@ -133,44 +132,6 @@ class PinResetIn(BaseModel):
     pin_confirmation: Pin6
 
 
-# -------------------------------------------------------- phone recovery
-
-
-class PhoneRecoveryStartIn(BaseModel):
-    nik: Annotated[str, StringConstraints(pattern=r"^\d{16}$")]
-    birth_date: date
-
-
-class PhoneRecoveryFaceIn(BaseModel):
-    liveness_session_id: Annotated[str, Field(min_length=1, max_length=64)]
-
-
-class PhoneRecoveryPhoneIn(BaseModel):
-    new_phone: Phone
-
-
-class PhoneRecoveryCompleteIn(BaseModel):
-    verification_token: Annotated[str, Field(min_length=1)]
-
-
-class RecoverySupportStartIn(BaseModel):
-    old_phone: Phone
-    new_phone: Phone
-    name: PersonName
-
-
-class RecoverySupportSubmitIn(BaseModel):
-    verification_token: Annotated[str, Field(min_length=1)]
-    last_transaction_hint: Annotated[str | None, Field(default=None, max_length=200)] = None
-    balance_hint: Annotated[int | None, Field(default=None, ge=0)] = None
-    note: Annotated[str | None, Field(default=None, max_length=500)] = None
-
-
-class RecoveryDecisionIn(BaseModel):
-    decision: Literal["APPROVE", "REJECT"]
-    reason: Annotated[str, StringConstraints(min_length=10, max_length=300)]
-
-
 # --------------------------------------------------------------- profile
 
 
@@ -241,10 +202,6 @@ class ContactChangeConfirmIn(BaseModel):
 class BiometricRegisterIn(BaseModel):
     device_id: Annotated[str, Field(min_length=1, max_length=64)]
     public_key: Annotated[str, Field(min_length=1)]
-
-
-class FaceRegisterIn(BiometricRegisterIn):
-    liveness_session_id: Annotated[str, Field(min_length=1, max_length=64)]
 
 
 class BiometricSettingsIn(BaseModel):

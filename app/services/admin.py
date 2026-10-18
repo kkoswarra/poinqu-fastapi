@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import secrets
 import uuid
-from contextlib import suppress
 from datetime import datetime, timedelta
 
 import pyotp
@@ -31,7 +30,6 @@ from app.models import (
     AuditLog,
     Device,
     Permission,
-    RecoveryRequest,
     Role,
     RolePermission,
     User,
@@ -52,14 +50,12 @@ PERMISSIONS = [
     "catalog.write",
     "txn.read",
     "txn.write",
-    "kyc.review",
-    "recovery.review",
     "audit.read",
 ]
 
 ROLE_PERMISSIONS = {
     "SUPERADMIN": PERMISSIONS,
-    "CS": ["users.read", "recovery.review"],
+    "CS": ["users.read"],
 }
 
 
@@ -692,10 +688,8 @@ def search_users(
                 "id": f"usr_{user.id.hex[:10].upper()}",
                 "name": user.name,
                 "phone_masked": f"{user.phone[:4]}****{user.phone[-4:]}",
-                "level": user.level.value,
-                "kyc_status": user.kyc_status.value,
+                "level": "BASIC",
                 "status": user.status.value,
-                "recovery_hold": user.recovery_hold,
                 "created_at": to_iso(user.created_at),
                 "last_active_at": to_iso(last_active),
             }
@@ -708,85 +702,6 @@ def search_users(
             "limit": limit,
         },
     }
-
-
-def decide_recovery_request(
-    db: Session,
-    actor: Admin,
-    public_id: str,
-    decision: str,
-    reason: str,
-    ip: str | None = None,
-) -> RecoveryRequest:
-    from app.services import whatsapp
-    from app.services.auth import revoke_user_sessions
-    from app.services.profile import record_security_event
-
-    request = db.scalar(
-        select(RecoveryRequest).where(RecoveryRequest.public_id == public_id)
-    )
-    if request is None:
-        raise AppError("RECOVERY_REQUEST_NOT_FOUND")
-    if request.status != "PENDING_REVIEW":
-        raise AppError("RECOVERY_REQUEST_ALREADY_DECIDED")
-
-    before = {
-        "status": request.status,
-        "old_phone": request.old_phone,
-        "new_phone": request.new_phone,
-    }
-    user = db.get(User, request.user_id) if request.user_id else None
-
-    if decision == "APPROVE" and user is not None:
-        conflict = db.scalar(
-            select(User).where(User.phone == request.new_phone, User.id != user.id)
-        )
-        if conflict is not None:
-            raise AppError("PHONE_ALREADY_REGISTERED")
-
-        user.phone = request.new_phone
-        user.recovery_hold = False
-        cooldown_hours = settings_service.get_int(db, "recovery.cooldown_hours", 24)
-        user.transfer_blocked_until = utcnow() + timedelta(hours=cooldown_hours)
-        revoke_user_sessions(db, user, all_devices=True)
-        record_security_event(
-            db,
-            user,
-            "PHONE_CHANGED",
-            description="Nomor HP dipulihkan melalui persetujuan admin.",
-        )
-    elif user is not None:
-        user.recovery_hold = False
-
-    request.status = "APPROVED" if decision == "APPROVE" else "REJECTED"
-    request.decided_by = actor.id
-    request.decision_reason = reason
-    request.decided_at = utcnow()
-    db.flush()
-
-    message = (
-        "Pengajuan pemulihan nomor kamu disetujui. Silakan masuk dengan nomor baru."
-        if decision == "APPROVE"
-        else "Pengajuan pemulihan nomor kamu ditolak. Hubungi bantuan bila perlu."
-    )
-    with suppress(AppError):
-        whatsapp.send_text(db, request.new_phone, message)
-    record_audit(
-        db,
-        actor_type="ADMIN",
-        actor_id=actor.id,
-        action="recovery.decision",
-        entity="recovery_requests",
-        entity_id=request.public_id,
-        before=before,
-        after={
-            "status": request.status,
-            "reason": reason,
-            "new_phone": request.new_phone,
-        },
-        ip=ip,
-    )
-    return request
 
 
 def _audit_actor_id(log: AuditLog) -> str | None:

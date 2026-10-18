@@ -26,7 +26,6 @@ from app.db import get_db
 from app.models import (
     BiometricType,
     Device,
-    KycStatus,
     OtpPurpose,
     OtpSession,
     RefreshToken,
@@ -113,15 +112,10 @@ def _login_methods(db: Session, user: User, request: Request) -> tuple[str, list
     registered = {row.type for row in rows}
     if BiometricType.FINGERPRINT in registered:
         methods.append("FINGERPRINT")
-    if BiometricType.FACE in registered:
-        methods.append("FACE")
 
     preferred = "PIN"
-    if user.biometric_login:
-        if BiometricType.FINGERPRINT in registered:
-            preferred = "FINGERPRINT"
-        elif BiometricType.FACE in registered:
-            preferred = "FACE"
+    if user.biometric_login and BiometricType.FINGERPRINT in registered:
+        preferred = "FINGERPRINT"
     return preferred, methods
 
 
@@ -346,7 +340,6 @@ def register_complete(payload: RegisterCompleteIn, request: Request, db: Session
         gender=context.get("gender"),
         pin_hash=hash_secret(payload.pin),
         level=UserLevel.BASIC,
-        kyc_status=KycStatus.NONE,
         status=UserStatus.ACTIVE,
         terms_accepted_at=terms_at,
     )
@@ -556,11 +549,6 @@ def _biometric_login(
 @router.post("/login/fingerprint", summary="Login dengan sidik jari")
 def login_fingerprint(payload: BiometricLoginIn, request: Request, db: Session = Depends(get_db)):
     return _biometric_login(payload, request, db, BiometricType.FINGERPRINT)
-
-
-@router.post("/login/face", summary="Login dengan wajah")
-def login_face(payload: BiometricLoginIn, request: Request, db: Session = Depends(get_db)):
-    return _biometric_login(payload, request, db, BiometricType.FACE)
 
 
 @router.post("/token/refresh", summary="Perbarui token")

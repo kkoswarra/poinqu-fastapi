@@ -29,7 +29,7 @@ def test_register_and_profile_envelope() -> None:
     data = register()
     assert data["user"]["phone"] == "081234567890"
     assert data["user"]["level"] == "BASIC"
-    assert data["user"]["verification_status"] == "UNVERIFIED"
+    assert data["user"]["email_verified"] is False
     assert data["tokens"]["token_type"] == "Bearer"
     assert data["tokens"]["expires_in"] == 900
 

@@ -192,7 +192,6 @@ def test_admin_user_search_and_self_modification_guard() -> None:
     assert response.status_code == 200, response.text
     items = response.json()["data"]["items"]
     assert items and items[0]["phone_masked"].startswith("0812****")
-    assert items[0]["recovery_hold"] is False
 
     response = client.get("/v1/admin/me", headers=bootstrap)
     my_id = response.json()["data"]["id"]

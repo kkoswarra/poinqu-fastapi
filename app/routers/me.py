@@ -21,7 +21,6 @@ from app.models import (
     BiometricType,
     ContactChangeRequest,
     Device,
-    KycStatus,
     OtpPurpose,
     OtpSession,
     Platform,
@@ -36,7 +35,6 @@ from app.schemas import (
     ContactChangeConfirmIn,
     EmailChangeRequestIn,
     EmailVerificationVerifyIn,
-    FaceRegisterIn,
     PhoneChangeRequestIn,
     PinChangeIn,
     PinVerifyIn,
@@ -89,8 +87,6 @@ def update_profile(
         )
 
     if payload.name is not None and payload.name != user.name:
-        if user.kyc_status == KycStatus.VERIFIED:
-            raise AppError("NAME_LOCKED")
         user.name = payload.name
 
     if payload.gender is not None:
@@ -566,31 +562,6 @@ def register_fingerprint(
     return JSONResponse(status_code=201, content=jsonable_encoder(body))
 
 
-@router.post("/biometrics/face", summary="Daftarkan wajah", status_code=201)
-def register_face(
-    payload: FaceRegisterIn,
-    request: Request,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
-    _require_pin_token(request, db, user)
-    device = _device_for_payload(db, user, request, payload.device_id)
-    biometric = bio_service.register_biometric(
-        db,
-        user=user,
-        device=device,
-        kind=BiometricType.FACE,
-        public_key=payload.public_key,
-        liveness_session_id=payload.liveness_session_id,
-    )
-    db.commit()
-    body = ok(
-        {"type": "FACE", "registered_at": to_iso(biometric.registered_at)},
-        "Wajah terdaftar.",
-    )
-    return JSONResponse(status_code=201, content=jsonable_encoder(body))
-
-
 @router.delete("/biometrics/{kind}", summary="Hapus biometrik")
 def delete_biometric(
     kind: str,
@@ -598,7 +569,7 @@ def delete_biometric(
     user: User = Depends(get_current_user),
     device: Device = Depends(get_current_device),
 ):
-    if kind not in {"FINGERPRINT", "FACE"}:
+    if kind != "FINGERPRINT":
         raise AppError("INVALID_BIOMETRIC_TYPE")
     biometric = bio_service.get_biometric(db, user, device, BiometricType(kind))
     if biometric is None:

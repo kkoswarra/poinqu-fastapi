@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.core.clock import to_iso, utcnow
 from app.core.deps import client_ip, device_header
-from app.models import Device, KycStatus, Platform, SecurityEvent, SecuritySeverity, User
+from app.models import Device, Platform, SecurityEvent, SecuritySeverity, User
 
 
 def user_public(user: User) -> dict:
@@ -24,9 +24,7 @@ def user_public(user: User) -> dict:
         "email_verified_at": to_iso(user.email_verified_at),
         "gender": user.gender,
         "avatar_url": avatar_url(user),
-        "level": user.level.value,
-        "verification_status": "VERIFIED" if user.kyc_status == KycStatus.VERIFIED else "UNVERIFIED",
-        "kyc_status": user.kyc_status.value,
+        "level": "BASIC",
         "points": 0,
         "member_since": user.created_at.date().isoformat(),
     }
@@ -141,7 +139,6 @@ _SECURITY_TITLES = {
     "NEW_DEVICE": "Login dari perangkat baru",
     "PIN_FAILED": "Percobaan PIN salah",
     "PIN_CHANGED": "PIN diubah",
-    "FACE_FAILED": "Verifikasi wajah gagal",
     "PASSWORD_RESET": "PIN direset",
     "PHONE_CHANGED": "Nomor HP diubah",
     "EMAIL_VERIFIED": "Email diverifikasi",

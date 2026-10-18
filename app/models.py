@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum as PyEnum
 from enum import StrEnum
 
@@ -11,7 +11,6 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
-    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -108,8 +107,6 @@ class User(TimestampMixin, Base):
     pin_failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     pin_locked_until: Mapped[datetime | None] = mapped_column(DateTime)
     biometric_login: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    recovery_hold: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    transfer_blocked_until: Mapped[datetime | None] = mapped_column(DateTime)
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
@@ -289,21 +286,6 @@ class PinToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
 
 
-class PhoneRecovery(Base):
-    __tablename__ = "phone_recoveries"
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    public_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
-    attempts_left: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
-    liveness_session_id: Mapped[str | None] = mapped_column(String(64))
-    face_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    new_phone: Mapped[str | None] = mapped_column(String(16))
-    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
-
-
 class SecurityEvent(Base):
     __tablename__ = "security_events"
 
@@ -317,21 +299,6 @@ class SecurityEvent(Base):
     description: Mapped[str | None] = mapped_column(Text)
     read_at: Mapped[datetime | None] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False, index=True)
-
-
-class KycProfile(Base):
-    """Data KYC minimal yang dibutuhkan pemulihan nomor (fase KYC mengisi ini)."""
-
-    __tablename__ = "kyc_profiles"
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), unique=True, nullable=False)
-    nik_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    birth_date: Mapped[date] = mapped_column(Date, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utcnow, onupdate=utcnow, nullable=False
-    )
 
 
 class AttemptCounter(Base):
@@ -356,27 +323,6 @@ class PinAttempt(Base):
     lockout_level: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime)
     last_failed_at: Mapped[datetime | None] = mapped_column(DateTime)
-
-
-class RecoveryRequest(Base):
-    """Pengajuan pemulihan nomor untuk akun tanpa KYC (H.7.3)."""
-
-    __tablename__ = "recovery_requests"
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    public_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
-    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
-    old_phone: Mapped[str] = mapped_column(String(16), nullable=False)
-    new_phone: Mapped[str] = mapped_column(String(16), nullable=False)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    last_transaction_hint: Mapped[str | None] = mapped_column(String(200))
-    balance_hint: Mapped[int | None] = mapped_column(BigInteger)
-    note: Mapped[str | None] = mapped_column(String(500))
-    status: Mapped[str] = mapped_column(String(14), default="PENDING_REVIEW", nullable=False)
-    decided_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("admins.id"))
-    decision_reason: Mapped[str | None] = mapped_column(Text)
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False, index=True)
 
 
 # ---------------------------------------------------------------- admin

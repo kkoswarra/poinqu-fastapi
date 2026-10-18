@@ -22,7 +22,7 @@ from app.core.deps import (
 from app.core.errors import AppError, ok
 from app.core.security import admin_challenge_token
 from app.db import get_db
-from app.models import Admin, AppSetting, AuditLog, RecoveryRequest, User
+from app.models import Admin, AppSetting, AuditLog
 from app.schemas import (
     Admin2FAEnableIn,
     Admin2FASetupIn,
@@ -32,7 +32,6 @@ from app.schemas import (
     AdminRefreshIn,
     AdminTwoFactorIn,
     AdminUpdateIn,
-    RecoveryDecisionIn,
     SettingUpdateIn,
 )
 from app.services import admin as admin_service
@@ -379,86 +378,4 @@ def search_users(
         admin_service.search_users(
             db, q=q, status=status, level=level, cursor=cursor, limit=limit
         )
-    )
-
-
-@router.get("/recovery-requests", summary="Daftar pengajuan pemulihan")
-def list_recovery_requests(
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(permission_required("recovery.review")),
-    status: Literal["PENDING_REVIEW", "APPROVED", "REJECTED"] | None = Query(default=None),
-    cursor: str | None = Query(default=None),
-    limit: int = Query(default=20, ge=1, le=100),
-):
-    statement = select(RecoveryRequest)
-    if status:
-        statement = statement.where(RecoveryRequest.status == status)
-    cursor_at = admin_service._parse_cursor(cursor)
-    if cursor_at is not None:
-        statement = statement.where(RecoveryRequest.created_at < cursor_at)
-    rows = db.scalars(
-        statement.order_by(RecoveryRequest.created_at.desc()).limit(limit + 1)
-    ).all()
-    has_more = len(rows) > limit
-    items = rows[:limit]
-    return ok(
-        {
-            "items": [
-                {
-                    "id": row.public_id,
-                    "status": row.status,
-                    "name": row.name,
-                    "old_phone": f"{row.old_phone[:4]}****{row.old_phone[-4:]}",
-                    "new_phone": f"{row.new_phone[:4]}****{row.new_phone[-4:]}",
-                    "account_found": row.user_id is not None,
-                    "last_transaction_hint": row.last_transaction_hint,
-                    "balance_hint": row.balance_hint,
-                    "note": row.note,
-                    "created_at": to_iso(row.created_at),
-                    "decided_at": to_iso(row.decided_at),
-                }
-                for row in items
-            ],
-            "pagination": {
-                "next_cursor": to_iso(items[-1].created_at)
-                if has_more and items
-                else None,
-                "has_more": has_more,
-                "limit": limit,
-            },
-        }
-    )
-
-
-@router.post(
-    "/recovery-requests/{request_id}/decision",
-    summary="Putuskan pengajuan pemulihan",
-)
-def decide_recovery_request(
-    request_id: str,
-    payload: RecoveryDecisionIn,
-    request: Request,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(permission_required("recovery.review")),
-):
-    row = admin_service.decide_recovery_request(
-        db,
-        admin,
-        request_id,
-        payload.decision,
-        payload.reason,
-        client_ip(request),
-    )
-    db.commit()
-    user = db.get(User, row.user_id) if row.user_id else None
-    return ok(
-        {
-            "id": row.public_id,
-            "status": row.status,
-            "decided_at": to_iso(row.decided_at),
-            "transfer_blocked_until": to_iso(user.transfer_blocked_until)
-            if user
-            else None,
-        },
-        "Keputusan disimpan.",
     )

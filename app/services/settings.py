@@ -78,12 +78,6 @@ SETTING_SPECS: dict[str, tuple[Any, str, Callable[[Any], bool], str]] = {
         _bool,
         "boolean",
     ),
-    "recovery.cooldown_hours": (
-        24,
-        "Lama transaksi keluar ditahan setelah pemulihan nomor disetujui (jam).",
-        _int_range(0, 168),
-        "integer >= 0",
-    ),
     "limits.balance_cap.BASIC": (
         2_000_000,
         "Saldo maksimal akun Basic (rupiah).",
