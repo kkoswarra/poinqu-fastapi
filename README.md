@@ -324,8 +324,7 @@ Production: **https://poinqu-backend.vercel.app**
 - Preview deployment memakai Deployment Protection; alias production publik.
   Cold start ±15 detik, request hangat ±0,3 detik (Fluid Compute).
 - Deploy ini dibuat dari CLI lokal. Project Vercel terhubung ke repo GitHub
-  `poinqu-backend` (masih template); untuk auto-deploy berikutnya, hubungkan
-  repo `poinqu-fastapi` ke project atau push kode ke repo yang terhubung.
+  `poinqu-fastapi`; push ke `main` otomatis memicu deployment production.
 
 ## Format respons
 
