@@ -100,19 +100,22 @@ dihapus (CI hijau, 19 Oktober 2026).
 
 ## 5. App React Native
 
-- [ ] Register: field email wajib.
-- [ ] Login: pilihan metode HP/email; kirim `identifier`.
-- [ ] Lupa PIN: pilihan HP/email.
-- [ ] Home: banner verifikasi email.
-- [ ] Akun: ganti nomor HP dan email.
-- [ ] Hapus layar `LostPhone` dan pemanggilan recovery.
-- [ ] Hapus UI face: login/enrollment; sisakan fingerprint.
-- [ ] Scan dan transfer: coming soon/disabled.
-- [ ] Perbaiki `refreshClient` agar mengirim `X-Device-Id`.
-- [ ] Perbaiki format public key biometrik (PEM vs base64 DER).
-- [ ] `UNAUTHORIZED` → logout.
-- [ ] Samakan deep link `poinqu://` + `https://poinqu.id`.
-- [ ] Satukan peta error `src/api/errors.ts` + `src/lib/errors.ts`.
+- [x] Register: field email wajib.
+- [x] Login: pilihan metode HP/email; kirim `identifier`.
+- [x] Lupa PIN: pilihan HP/email.
+- [x] Home: banner verifikasi email.
+- [x] Akun: ganti nomor HP dan email.
+- [x] Hapus layar `LostPhone` dan pemanggilan recovery.
+- [x] Hapus UI face: login/enrollment; sisakan fingerprint.
+- [x] Scan dan transfer: coming soon/disabled.
+- [x] Perbaiki `refreshClient` agar mengirim `X-Device-Id`.
+- [x] Perbaiki format public key biometrik (PEM vs base64 DER).
+- [x] `UNAUTHORIZED` → logout.
+- [x] Samakan deep link `poinqu://` + `https://poinqu.id`.
+- [x] Satukan peta error `src/api/errors.ts` + `src/lib/errors.ts`.
+
+> Catatan 19 Okt 2026: `npm run typecheck` di app hijau. Uji integrasi app ke
+> backend staging masih menunggu kredensial SMTP/WA dan build development.
 
 ---
 
