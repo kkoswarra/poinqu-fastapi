@@ -69,6 +69,24 @@ class Settings:
     FONNTE_WEBHOOK_SECRET: str = os.getenv("FONNTE_WEBHOOK_SECRET", "")
     FONNTE_ALLOWED_IPS: str = os.getenv("FONNTE_ALLOWED_IPS", "")
 
+    # Email SMTP (OTP email & notifikasi)
+    # Kosong = otomatis: SMTP bila SMTP_HOST diisi, selain itu gateway log.
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "").strip().lower()
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = _env_int("SMTP_PORT", 587)
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "no-reply@poinqu.id")
+    SMTP_USE_TLS: bool = _env_bool("SMTP_USE_TLS", True)
+    SMTP_USE_SSL: bool = _env_bool("SMTP_USE_SSL", False)
+    SMTP_TIMEOUT_SECONDS: int = _env_int("SMTP_TIMEOUT_SECONDS", 10)
+    EMAIL_OTP_SUBJECT: str = os.getenv("EMAIL_OTP_SUBJECT", "Kode verifikasi Poinqu")
+    EMAIL_OTP_TEMPLATE: str = os.getenv(
+        "EMAIL_OTP_TEMPLATE",
+        "Kode verifikasi Poinqu kamu adalah {code}. Berlaku {minutes} menit.\n"
+        "Jangan berikan kode ini ke siapa pun, termasuk yang mengaku dari Poinqu.",
+    )
+
     # PIN
     PIN_MAX_FAILED: int = _env_int("PIN_MAX_FAILED", 5)
     PIN_LOCK_SECONDS: int = _env_int("PIN_LOCK_SECONDS", 900)

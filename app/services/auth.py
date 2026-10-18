@@ -33,6 +33,7 @@ from app.models import (
     UserStatus,
     VerificationToken,
 )
+from app.services import email as email_service
 from app.services import rate_limit, whatsapp
 from app.services import settings as settings_service
 from app.services.revocation import store as revocation_store
@@ -169,7 +170,8 @@ def request_otp(
         channel_value = "WHATSAPP"
         phone_value = target_value
 
-    whatsapp.ensure_provider_healthy(db)
+    if target_type_value == "PHONE":
+        whatsapp.ensure_provider_healthy(db)
     enforce_otp_limits(db, target_value, device_id, ip)
 
     now = utcnow()
@@ -195,9 +197,11 @@ def request_otp(
         with suppress(AppError):
             # Pemberitahuan bersifat best-effort; jangan bocorkan status akun.
             if target_type_value == "EMAIL":
-                # Pengiriman email menyusul di Sprint 2.
-                raise AppError("OTP_PROVIDER_UNAVAILABLE")
-            whatsapp.send_text(db, target_value, notification)
+                email_service.send_notification(
+                    db, target_value, settings.EMAIL_OTP_SUBJECT, notification
+                )
+            else:
+                whatsapp.send_text(db, target_value, notification)
         bump_otp_scope(db, device_id, ip)
         if decoy:
             equalize_timing()
@@ -210,7 +214,7 @@ def request_otp(
         return session
 
     try:
-        whatsapp.send_otp(db, session, code)
+        _deliver_otp(db, session, code)
     except AppError:
         # Pengiriman gagal: sesi dibatalkan dan tidak dihitung ke batas per jam.
         session.cancelled_at = utcnow()
@@ -218,6 +222,13 @@ def request_otp(
         raise
     bump_otp_scope(db, device_id, ip)
     return session
+
+
+def _deliver_otp(db: Session, session: OtpSession, code: str) -> None:
+    if session.channel == "EMAIL":
+        email_service.send_otp(db, session, code)
+    else:
+        whatsapp.send_otp(db, session, code)
 
 
 def get_otp_session(db: Session, session_public_id: str) -> OtpSession:
@@ -228,9 +239,9 @@ def get_otp_session(db: Session, session_public_id: str) -> OtpSession:
 
 
 def resend_otp(db: Session, session_public_id: str) -> OtpSession:
-    whatsapp.ensure_provider_healthy(db)
-
     session = get_otp_session(db, session_public_id)
+    if session.channel == "PHONE":
+        whatsapp.ensure_provider_healthy(db)
     now = utcnow()
 
     retry_after = seconds_until(session.last_sent_at + timedelta(seconds=settings.OTP_RESEND_COOLDOWN))
@@ -248,7 +259,7 @@ def resend_otp(db: Session, session_public_id: str) -> OtpSession:
     else:
         try:
             # Kirim dulu; state sesi baru diubah bila provider menerima.
-            whatsapp.send_otp(db, session, code)
+            _deliver_otp(db, session, code)
         except AppError:
             db.commit()
             raise

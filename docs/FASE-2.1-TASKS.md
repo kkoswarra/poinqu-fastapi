@@ -47,14 +47,17 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ## 2. Email gateway SMTP
 
-- [ ] Konfigurasi `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
+**Status:** selesai (gateway + test; kredensial SMTP staging menyusul).
+
+- [x] Konfigurasi `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
       `SMTP_FROM`, `SMTP_USE_TLS`, `SMTP_TIMEOUT_SECONDS`.
-- [ ] Adapter `EmailGateway.send_otp(email, code)`.
-- [ ] Adapter `EmailGateway.send_notification(email, subject, text)`.
-- [ ] Simpan metadata ke `email_messages`; jangan simpan isi/kode.
-- [ ] Timeout + mapping error ke `OTP_PROVIDER_UNAVAILABLE`.
-- [ ] Rate limit email/device/IP.
-- [ ] Template OTP dan notifikasi (verifikasi, change email, dll.).
+- [x] Adapter `EmailGateway.send_otp(email, code)`.
+- [x] Adapter `EmailGateway.send_notification(email, subject, text)`.
+- [x] Simpan metadata ke `email_messages`; jangan simpan isi/kode.
+- [x] Timeout + mapping error ke `OTP_PROVIDER_UNAVAILABLE`.
+- [x] Rate limit email/device/IP (menggunakan counter target).
+- [x] Template OTP dan notifikasi.
+- [ ] Uji kirim email nyata di staging (SMTP kredensial).
 
 ---
 

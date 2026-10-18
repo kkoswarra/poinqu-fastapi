@@ -35,6 +35,7 @@ from app.core.errors import (
 from app.core.openapi import build_openapi
 from app.db import SessionLocal, init_schema
 from app.routers import admin, auth, me, recovery, webhooks
+from app.services import email as email_service
 from app.services import wa
 from app.services.admin import ensure_seed
 
@@ -57,6 +58,11 @@ async def lifespan(_: FastAPI):
     logger.warning("OTP provider aktif: %s", active_gateway.name)
     if active_gateway.name == "FONNTE" and not settings.FONNTE_TOKEN:
         logger.error("FONNTE_TOKEN kosong: endpoint OTP akan membalas 503.")
+
+    active_email = email_service.get_gateway()
+    logger.warning("Email gateway aktif: %s", active_email.name)
+    if active_email.name == "SMTP" and not settings.SMTP_HOST:
+        logger.error("SMTP_HOST kosong: OTP email akan gagal.")
     yield
 
 

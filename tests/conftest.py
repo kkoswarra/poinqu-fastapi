@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.db import Base, SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services import email as email_service  # noqa: E402
 from app.services.admin import ensure_seed  # noqa: E402
 from app.services.revocation import store as revocation_store  # noqa: E402
 from app.services.wa import gateway  # noqa: E402
@@ -43,9 +44,12 @@ def fresh_database():
     with SessionLocal() as db:
         ensure_seed(db)
     gateway.sent.clear()
+    previous_email_gateway = email_service.get_gateway()
+    email_service.set_gateway(email_service.LoggingEmailGateway())
     revocation_store.reset()
     yield
     gateway.sent.clear()
+    email_service.set_gateway(previous_email_gateway)
     revocation_store.reset()
 
 
