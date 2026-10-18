@@ -53,6 +53,7 @@ from app.services.auth import (
     issue_user_tokens,
     mark_verification_used,
     otp_public,
+    otp_target,
     request_otp,
     resend_otp,
     revoke_user_sessions,
@@ -264,7 +265,7 @@ def register_complete(payload: RegisterCompleteIn, request: Request, db: Session
     attestation.verify_attestation(db, request)
     verification, session = validate_verification(db, payload.verification_token, OtpPurpose.REGISTER)
     context = session.context or {}
-    phone = context.get("phone") or session.phone
+    phone = context.get("phone") or otp_target(session)
 
     if payload.pin != payload.pin_confirmation:
         raise AppError("PIN_MISMATCH")

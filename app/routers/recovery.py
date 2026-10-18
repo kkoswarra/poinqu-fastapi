@@ -41,6 +41,7 @@ from app.services import rate_limit
 from app.services.auth import (
     mark_verification_used,
     otp_public,
+    otp_target,
     request_otp,
     revoke_user_sessions,
     validate_verification,
@@ -318,8 +319,8 @@ def support_submit(
         except ValueError:
             user = None
 
-    old_phone = context.get("old_phone") or session.phone
-    new_phone = context.get("new_phone") or session.phone
+    old_phone = context.get("old_phone") or otp_target(session)
+    new_phone = context.get("new_phone") or otp_target(session)
     if user is not None:
         user.recovery_hold = True
 

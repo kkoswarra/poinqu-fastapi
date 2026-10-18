@@ -42,11 +42,23 @@ def _new_code() -> str:
     return f"{secrets.randbelow(1_000_000):06d}"
 
 
+def otp_target(session: OtpSession) -> str:
+    """Target OTP (nomor HP atau email), termasuk data lama."""
+
+    return session.target or session.phone or ""
+
+
 def otp_public(session: OtpSession) -> dict:
+    target = otp_target(session)
+    masked_identifier = (
+        _mask_email(target) if session.target_type == "EMAIL" else _mask(target)
+    )
     return {
         "otp_session_id": session.public_id,
         "purpose": session.purpose.value,
-        "masked_phone": _mask(session.phone),
+        "masked_phone": _mask(session.phone) if session.phone else None,
+        "masked_identifier": masked_identifier,
+        "target_type": session.target_type,
         "channel": session.channel,
         "expires_in": settings.OTP_TTL,
         "resend_available_in": settings.OTP_RESEND_COOLDOWN,
@@ -56,6 +68,13 @@ def otp_public(session: OtpSession) -> dict:
 
 def _mask(phone: str) -> str:
     return f"{phone[:4]}****{phone[-4:]}" if len(phone) > 8 else phone
+
+
+def _mask_email(email: str) -> str:
+    local, separator, domain = email.partition("@")
+    if not separator:
+        return _mask(email)
+    return f"{local[:2]}***@{domain}"
 
 
 def equalize_timing() -> None:
@@ -71,26 +90,26 @@ def _otp_limits(db: Session) -> tuple[int, int, int]:
     )
 
 
-def enforce_otp_limits(db: Session, phone: str, device_id: str, ip: str) -> None:
+def enforce_otp_limits(db: Session, target: str, device_id: str, ip: str) -> None:
     per_phone, per_device, per_ip = _otp_limits(db)
     now = utcnow()
     window_start = now - timedelta(hours=1)
 
-    phone_count = db.scalar(
+    target_count = db.scalar(
         select(func.count())
         .select_from(OtpSession)
         .where(
-            OtpSession.phone == phone,
+            OtpSession.target == target,
             OtpSession.created_at >= window_start,
             OtpSession.cancelled_at.is_(None),
         )
     )
     retries: list[int] = []
-    if (phone_count or 0) >= per_phone:
+    if (target_count or 0) >= per_phone:
         oldest = db.scalar(
             select(OtpSession.created_at)
             .where(
-                OtpSession.phone == phone,
+                OtpSession.target == target,
                 OtpSession.created_at >= window_start,
                 OtpSession.cancelled_at.is_(None),
             )
@@ -125,7 +144,10 @@ def bump_otp_scope(db: Session, device_id: str, ip: str) -> None:
 def request_otp(
     db: Session,
     *,
-    phone: str,
+    phone: str | None = None,
+    target: str | None = None,
+    target_type: str = "PHONE",
+    channel: str = "WHATSAPP",
     purpose: OtpPurpose,
     context: dict | None = None,
     user: User | None = None,
@@ -134,14 +156,30 @@ def request_otp(
     decoy: bool = False,
     notification: str | None = None,
 ) -> OtpSession:
+    target_value = target or phone
+    if not target_value:
+        raise AppError("INVALID_PHONE")
+
+    target_type_value = target_type.upper()
+    channel_value = channel.upper()
+    if target_type_value == "EMAIL":
+        channel_value = "EMAIL"
+        phone_value = None
+    else:
+        channel_value = "WHATSAPP"
+        phone_value = target_value
+
     whatsapp.ensure_provider_healthy(db)
-    enforce_otp_limits(db, phone, device_id, ip)
+    enforce_otp_limits(db, target_value, device_id, ip)
 
     now = utcnow()
     code = _new_code()
     session = OtpSession(
         public_id=public_id("otp"),
-        phone=phone,
+        phone=phone_value,
+        target=target_value,
+        target_type=target_type_value,
+        channel=channel_value,
         user_id=user.id if user else None,
         purpose=purpose,
         code_hash=hash_secret(code),
@@ -156,14 +194,17 @@ def request_otp(
     if notification is not None:
         with suppress(AppError):
             # Pemberitahuan bersifat best-effort; jangan bocorkan status akun.
-            whatsapp.send_text(db, phone, notification)
+            if target_type_value == "EMAIL":
+                # Pengiriman email menyusul di Sprint 2.
+                raise AppError("OTP_PROVIDER_UNAVAILABLE")
+            whatsapp.send_text(db, target_value, notification)
         bump_otp_scope(db, device_id, ip)
         if decoy:
             equalize_timing()
         return session
 
     if decoy:
-        # Tidak ada pesan WhatsApp. Tetap dihitung ke batas dan waktunya disamakan.
+        # Tidak ada pesan. Tetap dihitung ke batas dan waktunya disamakan.
         bump_otp_scope(db, device_id, ip)
         equalize_timing()
         return session
@@ -251,6 +292,9 @@ def create_trusted_login_token(
     session = OtpSession(
         public_id=public_id("otp"),
         phone=phone,
+        target=phone,
+        target_type="PHONE",
+        channel="WHATSAPP",
         user_id=user.id,
         purpose=OtpPurpose.LOGIN,
         code_hash=hash_secret(_new_code()),

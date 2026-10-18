@@ -101,16 +101,25 @@ def send_otp(db: Session, session: OtpSession, code: str) -> WhatsAppMessage:
     dipetakan ke ``OTP_TARGET_NOT_WHATSAPP`` (422) atau
     ``OTP_PROVIDER_UNAVAILABLE`` (503).
     """
+    if session.channel == "EMAIL":
+        # Pengiriman email diimplementasikan pada Sprint 2.
+        raise AppError(
+            "OTP_PROVIDER_UNAVAILABLE",
+            details={"retry_after": PROVIDER_UNAVAILABLE_RETRY},
+            retry_after=PROVIDER_UNAVAILABLE_RETRY,
+        )
+
+    target = session.target or session.phone or ""
     gateway = wa.get_gateway()
     result = gateway.send_otp(
-        session.phone,
+        target,
         render_otp_message(code),
         code=code,
     )
 
     record = WhatsAppMessage(
         otp_session_id=session.id,
-        phone=session.phone,
+        phone=target,
         provider=gateway.name,
         provider_msg_id=result.provider_msg_id,
         provider_state_id=result.provider_state_id,

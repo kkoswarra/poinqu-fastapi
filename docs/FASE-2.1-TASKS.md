@@ -23,14 +23,15 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ## 1. Database & migrasi
 
-- [ ] `users.email` wajib untuk user baru; data lama boleh `NULL`.
-- [ ] Tambah `users.email_verified_at`.
-- [ ] Unique index `lower(email)` untuk email tidak null.
-- [ ] `otp_sessions`: tambah `target`, `target_type` (`PHONE`/`EMAIL`),
+- [x] `users.email` wajib untuk user baru; data lama boleh `NULL` (validasi API menyusul Sprint 3).
+- [x] Tambah `users.email_verified_at`.
+- [x] Unique index `lower(email)` untuk email tidak null.
+- [x] `otp_sessions`: tambah `target`, `target_type` (`PHONE`/`EMAIL`),
       `channel` (`WHATSAPP`/`EMAIL`); `phone` boleh null.
-- [ ] Backfill `target = phone`, `target_type = PHONE` untuk data lama.
-- [ ] Tabel `email_messages` (metadata pengiriman, tanpa isi/kode).
-- [ ] Tabel `contact_change_requests` (PHONE/EMAIL, status, OTP, expiry).
+- [x] Backfill `target = phone`, `target_type = PHONE` untuk data lama.
+- [x] Tabel `email_messages` (metadata pengiriman, tanpa isi/kode).
+- [x] Tabel `contact_change_requests` (PHONE/EMAIL, status, OTP, expiry).
+- [x] Refactor `OtpSession`/service OTP ke `target`/`target_type` (phone lama tetap didukung).
 - [ ] Hapus router/tabel recovery setelah backup:
       `phone_recoveries`, `recovery_requests`, `recovery_hold`,
       `transfer_blocked_until` (bila tidak dipakai).

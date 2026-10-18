@@ -50,6 +50,11 @@ $env:DATABASE_URL="sqlite+pysqlite:///./poinqu.db"
 alembic upgrade head
 ```
 
+Jika database SQLite lama sudah berisi data, jalankan `alembic upgrade head`
+agar kolom baru (`target`, `target_type`, `email_verified_at`) dan perubahan
+nullability diterapkan. Jangan hanya mengandalkan `AUTO_CREATE_TABLES` untuk
+perubahan schema.
+
 Jika database sudah punya tabel dari versi sebelumnya, tandai baseline
 (tanpa menjalankan ulang create table):
 

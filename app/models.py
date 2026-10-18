@@ -15,11 +15,13 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -51,7 +53,14 @@ class OtpPurpose(StrEnum):
     REGISTER = "REGISTER"
     FORGOT_PIN = "FORGOT_PIN"
     CHANGE_PHONE = "CHANGE_PHONE"
+    CHANGE_EMAIL = "CHANGE_EMAIL"
+    VERIFY_EMAIL = "VERIFY_EMAIL"
     STEPUP = "STEPUP"
+
+
+class OtpTargetType(StrEnum):
+    PHONE = "PHONE"
+    EMAIL = "EMAIL"
 
 
 class Platform(StrEnum):
@@ -89,6 +98,7 @@ class User(TimestampMixin, Base):
     phone: Mapped[str] = mapped_column(String(16), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email: Mapped[str | None] = mapped_column(String(150), unique=True)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime)
     gender: Mapped[str | None] = mapped_column(String(6))
     avatar_key: Mapped[str | None] = mapped_column(Text)
     level: Mapped[UserLevel] = mapped_column(_enum(UserLevel), default=UserLevel.BASIC)
@@ -101,6 +111,9 @@ class User(TimestampMixin, Base):
     recovery_hold: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     transfer_blocked_until: Mapped[datetime | None] = mapped_column(DateTime)
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+
+Index("uq_users_email_lower", func.lower(User.email), unique=True)
 
 
 class Device(Base):
@@ -133,7 +146,9 @@ class OtpSession(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     public_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
-    phone: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    phone: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
+    target: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    target_type: Mapped[str] = mapped_column(String(10), default="PHONE", nullable=False)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     purpose: Mapped[OtpPurpose] = mapped_column(_enum(OtpPurpose, 16), nullable=False)
     channel: Mapped[str] = mapped_column(String(10), default="WHATSAPP", nullable=False)
@@ -169,6 +184,39 @@ class WhatsAppMessage(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, onupdate=utcnow, nullable=False
     )
+
+
+class EmailMessage(Base):
+    """Log metadata pengiriman OTP/notifikasi email (isi pesan tidak disimpan)."""
+
+    __tablename__ = "email_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    otp_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("otp_sessions.id"))
+    email: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(20), default="SMTP", nullable=False)
+    provider_msg_id: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(20), default="QUEUED", nullable=False)
+    failure_reason: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
+
+
+class ContactChangeRequest(Base):
+    """Permintaan ganti nomor HP/email dengan verifikasi OTP."""
+
+    __tablename__ = "contact_change_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    public_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(String(10), nullable=False)  # PHONE | EMAIL
+    new_value: Mapped[str] = mapped_column(String(150), nullable=False)
+    status: Mapped[str] = mapped_column(String(12), default="PENDING", nullable=False)
+    otp_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("otp_sessions.id"))
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
 
 
 class VerificationToken(Base):

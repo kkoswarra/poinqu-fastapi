@@ -107,6 +107,19 @@ def test_otp_expired() -> None:
     assert response.json()["code"] == "OTP_EXPIRED"
 
 
+def test_otp_session_has_generic_target() -> None:
+    response = otp_request("081234567890")
+    session_id = response.json()["data"]["otp_session_id"]
+
+    with SessionLocal() as db:
+        session = db.scalar(select(OtpSession).where(OtpSession.public_id == session_id))
+        assert session is not None
+        assert session.target == "081234567890"
+        assert session.target_type == "PHONE"
+        assert session.channel == "WHATSAPP"
+        assert session.phone == "081234567890"
+
+
 def test_otp_hourly_rate_limit() -> None:
     for _ in range(5):
         assert otp_request("081234567890").status_code == 200

@@ -84,11 +84,14 @@ def init_schema() -> None:
         ("devices", "trusted_at", timestamp_type, None),
         ("devices", "attestation_provider", "VARCHAR(20)", None),
         ("devices", "attested_at", timestamp_type, None),
+        ("users", "email_verified_at", timestamp_type, None),
         ("verification_tokens", "via", "VARCHAR(20)", "'OTP'"),
         ("verification_tokens", "device_id", "VARCHAR(64)", None),
         ("users", "recovery_hold", boolean_type, boolean_false),
         ("users", "transfer_blocked_until", timestamp_type, None),
         ("otp_sessions", "is_decoy", boolean_type, boolean_false),
+        ("otp_sessions", "target", "VARCHAR(150)", None),
+        ("otp_sessions", "target_type", "VARCHAR(10)", "'PHONE'"),
         ("admins", "public_id", "VARCHAR(32)", None),
         ("admins", "must_change_password", boolean_type, boolean_true),
         ("admins", "totp_enabled", boolean_type, boolean_false),
@@ -100,3 +103,21 @@ def init_schema() -> None:
     ]
     for table, column, ddl_type, default in columns:
         _add_column_if_missing(table, column, ddl_type, default)
+
+    # Backfill dan indeks yang tidak ditangani oleh create_all pada tabel lama.
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE otp_sessions SET target = phone WHERE target IS NULL")
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_otp_sessions_target "
+                "ON otp_sessions (target)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower "
+                "ON users (lower(email))"
+            )
+        )

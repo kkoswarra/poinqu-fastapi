@@ -94,6 +94,8 @@ def test_fonnte_success_stores_metadata_and_uses_expected_payload(fonnte: FakeFo
         "otp_session_id",
         "purpose",
         "masked_phone",
+        "masked_identifier",
+        "target_type",
         "channel",
         "expires_in",
         "resend_available_in",
