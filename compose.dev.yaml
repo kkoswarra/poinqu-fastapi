@@ -1,0 +1,23 @@
+# Override untuk development:
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+#
+# - kode di ./app di-mount ke container (auto-reload)
+# - environment development
+
+services:
+  api:
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      MEDIA_BASE_URL: ${MEDIA_BASE_URL:-http://localhost:8000}
+    volumes:
+      - ./app:/app/app
+      - media:/app/media
