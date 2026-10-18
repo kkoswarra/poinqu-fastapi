@@ -66,14 +66,20 @@ app/
     └── webhooks.py         # /v1/webhooks/fonnte/*
 ```
 
-## Menjalankan lokal (SQLite)
+## Menjalankan lokal (SQLite, tanpa Docker/admin)
+
+Panduan lengkap: **`docs/DEV-SETUP.md`**.
 
 ```powershell
-py -m venv .venv
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+uv python install 3.12
+uv venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
+uv pip install -r requirements-dev.txt
 
+$env:DATABASE_URL="sqlite+pysqlite:///./poinqu.db"
 $env:JWT_SECRET="secret-lokal-minimal-32-karakter"
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
@@ -82,6 +88,8 @@ uvicorn app.main:app --reload
 - Default DB: `sqlite+pysqlite:///./poinqu.db`.
 - Redis **opsional** di lokal: jika `REDIS_URL` kosong, pencabutan token
   memakai penyimpanan in-memory (hanya dev/test).
+- Test memakai SQLite in-memory dan berjalan di GitHub Actions; Docker tidak
+  diperlukan.
 
 `OTP_PROVIDER` kosong = otomatis: **Fonnte bila `FONNTE_TOKEN` diisi**,
 selain itu gateway log. Pada gateway log kode **tidak** dicetak; set

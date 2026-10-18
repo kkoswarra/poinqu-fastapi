@@ -7,6 +7,18 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ---
 
+## 0. Sprint 0 — Safety net & Alembic
+
+- [x] Tambah Alembic + baseline schema Fase 2 (`alembic/versions/0001_baseline.py`).
+- [x] Tambah workflow CI `.github/workflows/tests.yml`.
+- [x] Tambah panduan dev tanpa Docker/admin (`docs/DEV-SETUP.md`).
+- [ ] Jalankan `pytest` baseline sampai hijau (via CI/lokal).
+- [ ] Verifikasi `alembic upgrade head` dari DB kosong (CI).
+- [ ] Backup/export data recovery & KYC yang masih ada.
+- [ ] Buat branch `feat/fase-2.1-auth` untuk implementasi.
+
+---
+
 ## 1. Database & migrasi
 
 - [ ] `users.email` wajib untuk user baru; data lama boleh `NULL`.

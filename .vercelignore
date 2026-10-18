@@ -11,6 +11,8 @@ htmlcov
 !.env.example
 tests
 docs
+alembic
+alembic.ini
 media
 *.db
 *.sqlite3
