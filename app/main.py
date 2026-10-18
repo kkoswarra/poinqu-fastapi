@@ -79,6 +79,15 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
+    # Expo web bisa berpindah port (8081/8082/19006) dan diakses lewat IP LAN
+    # saat testing di perangkat. Origin lokal ini hanya untuk non-produksi.
+    allow_origin_regex=(
+        r"^https?://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+        r"192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})"
+        r"(:\d+)?$"
+        if settings.ENVIRONMENT != "production"
+        else None
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

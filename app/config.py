@@ -29,7 +29,11 @@ class Settings:
     DEBUG: bool = _env_bool("DEBUG", True)
     API_PREFIX: str = os.getenv("API_PREFIX", "/v1")
     MIN_APP_VERSION: str = os.getenv("MIN_APP_VERSION", "")
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8081")
+    CORS_ORIGINS: str = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:8081,"
+        "https://poinqu.id,https://www.poinqu.id",
+    )
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+pysqlite:///./poinqu.db")
