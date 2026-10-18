@@ -5,9 +5,9 @@ Versi dokumen 0.3 · 18 Oktober 2026 · pelengkap `PLAN.md` v0.4
 > **Status:** kontrak **baseline Fase 2** yang sudah berjalan.
 >
 > Perubahan setelah pivot ke pulsa/PPOB — auth email/nomor HP, hapus biometric
-> wajah, hapus recovery di app, dan perubahan nomor/email — diatur di
-> **`FASE-2.1-PIVOT.md`**. Jika ada pertentangan, **FASE-2.1 menang** untuk
-> area yang tercakup.
+> wajah, hapus recovery di app, perubahan nomor/email, serta **KYC dihapus** —
+> diatur di **`FASE-2.1-PIVOT.md`**. Wallet + top-up tetap dipakai.
+> Jika ada pertentangan, **FASE-2.1 menang** untuk area yang tercakup.
 >
 > Indeks dokumen: `docs/README.md`. Log keputusan: `docs/DECISIONS.md`.
 

@@ -15,6 +15,12 @@ memakai kontrak yang sama sebelum Fase 3 dilanjutkan.
 ## 1. Keputusan produk
 
 - Produk utama: **penjualan pulsa dan PPOB**, bukan dompet digital.
+- **Wallet + top-up dipertahankan** sebagai saldo prabayar untuk pembelian
+  PPOB.
+- **Batas nominal top-up diatur admin di database**; default tanpa batas
+  maksimum.
+- **KYC dan Premium dihapus**; tidak ada face liveness, KTP, atau admin KYC.
+- **Domain final `poinqu`** (deep link `poinqu://`, web `https://poinqu.id`).
 - Regulasi e-money tidak lagi menjadi fokus utama; tetap perlu review untuk
   penyimpanan saldo/top-up bila fitur itu dipertahankan.
 - **Biometric wajah dihapus**; sidik jari tetap.
@@ -275,7 +281,8 @@ Body tetap:
 ```
 
 `PATCH /me` tidak lagi mengubah email langsung; email hanya lewat alur
-verifikasi di 3.8. `name` tetap terkunci setelah KYC bila KYC dipertahankan.
+verifikasi di 3.8. Karena KYC dihapus, tidak ada `NAME_LOCKED`; nama boleh
+diubah kapan saja lewat profil.
 
 ### 3.10 Biometrik
 
@@ -283,8 +290,9 @@ verifikasi di 3.8. `name` tetap terkunci setelah KYC bila KYC dipertahankan.
 - Hapus `POST /me/biometrics/face`.
 - `POST /auth/biometric/challenge` hanya `type = FINGERPRINT`.
 - `GET /me/biometrics` hanya mengembalikan `fingerprint` dan `use_for_login`.
-- Error `FACE_*`, `LIVENESS_SESSION_INVALID`, dan `INVALID_BIOMETRIC_TYPE`
-  dihapus/dideprecate kecuali masih dipakai KYC.
+- Error `FACE_*` dan `LIVENESS_SESSION_INVALID` dihapus karena face/KYC
+  dihapus.
+- `INVALID_BIOMETRIC_TYPE` tetap dipakai untuk tipe selain `FINGERPRINT`.
 - Tabel `user_biometrics` tetap menyimpan data lama `FACE`, tetapi API tidak
   menerima pendaftaran baru.
 
@@ -407,23 +415,25 @@ Aturan:
 
 ## 7. Dampak ke Fase 3
 
-Ini bagian yang perlu dikonfirmasi karena bertentangan dengan kalimat
-“tidak ada perubahan di Fase 3”:
+Keputusan final (D-09, D-10, D-13, D-14, D-16):
 
-- **Jika wallet/top-up/KYC tetap dipakai**:
-  - Dokumen Fase 3 disusun ulang setelah D-10; draft lama sudah dihapus.
-  - KYC tidak lagi memakai face liveness; cukup KTP + manual review atau
-    provider tanpa face.
-  - Transfer/scan tetap ditunda.
-- **Jika produk benar-benar hanya PPOB tanpa saldo**:
-  - Fase 3A wallet/top-up/KYC harus dirombak.
-  - Fokus Fase 3 menjadi katalog, inquiry, transaksi PPOB, dan pembayaran
-    langsung (payment gateway per transaksi).
-  - KYC/Premium dan limit saldo mungkin tidak diperlukan.
-- **Jika KYC tetap tetapi face dihapus**:
-  - Hapus `POST /me/kyc/{id}/face`; verifikasi identitas cukup KTP + review
-    manual (atau provider eKYC tanpa face).
-  - `Liveness` dan error `FACE_*` dihapus dari KYC.
+- **Wallet + top-up dipertahankan** sebagai saldo prabayar untuk pembelian
+  PPOB.
+- **KYC dihapus**. Tidak ada Premium, `kyc_submissions`, `/me/kyc`, admin
+  KYC, KTP/selfie storage, atau face liveness KYC.
+- Fase 3 berisi:
+  1. wallet/ledger + saldo,
+  2. top-up Duitku VA/QRIS,
+  3. read bootstrap (transaksi, katalog Home, notifikasi),
+  4. katalog/inquiry/transaksi PPOB.
+- Batas nominal top-up diatur admin di database; default tanpa batas
+  maksimum.
+- Transfer/scan tetap ditunda (D-03).
+- Level wallet disederhanakan menjadi BASIC; tidak ada PREMIUM/KYC.
+- Limit saldo (bila ada) admin-configurable, bukan dari level KYC.
+
+Dokumen Fase 3 lama sudah dihapus dan akan disusun ulang mengikuti keputusan
+ini.
 
 ---
 
@@ -445,16 +455,14 @@ Ini bagian yang perlu dikonfirmasi karena bertentangan dengan kalimat
 Jangan menambah daftar keputusan di dokumen ini. Semua keputusan yang
 memblokir Fase 2.1 ada di `DECISIONS.md`:
 
-- **D-10** wallet/top-up/KYC tetap dipakai?
-- **D-11** email wajib saat register?
-- **D-12** provider email OTP.
-- **D-13** KYC/Premium masih diperlukan?
-- **D-14** face liveness KYC dihapus?
-- **D-15** syarat ganti nomor HP.
-- **D-16** syarat ganti email.
-- **D-17** endpoint recovery dihapus/deprecated.
-- **D-18** scan/transfer hidden/coming soon.
-- **D-19** verifikasi email OTP/magic link.
+- **D-18** — email wajib saat register?
+- **D-19** — provider email OTP.
+- **D-20** — syarat ganti nomor HP.
+- **D-21** — syarat ganti email.
+- **D-22** — endpoint recovery dihapus/deprecated.
+
+Sudah final: wallet + top-up (D-10), KYC dihapus (D-13), domain
+`poinqu` (D-12), verifikasi email OTP (D-11), batas top-up admin DB (D-14).
 
 Rekomendasi awal ada di `DECISIONS.md`. Setelah dijawab, update dokumen ini
 dan `FASE-2-API.md`.
@@ -463,7 +471,7 @@ dan `FASE-2-API.md`.
 
 ## 10. Urutan kerja yang disarankan
 
-1. Jawab keputusan **D-10 s/d D-19** di `DECISIONS.md`.
+1. Jawab keputusan **D-18 s/d D-22** di `DECISIONS.md`.
 2. Update `FASE-2-API.md` menjadi **Fase 2.1** (auth email/phone, tanpa face,
    tanpa recovery di app).
 3. Update skema + migrasi Alembic.
@@ -471,4 +479,4 @@ dan `FASE-2-API.md`.
 5. Implementasi endpoint email verification + change phone/email.
 6. Update app: register email, login method switch, forgot PIN method,
    home banner, account change, hapus LostPhone/face, scan/transfer disabled.
-7. Baru lanjut Fase 3 (wallet/top-up/KYC atau PPOB, tergantung D-10).
+7. Baru lanjut Fase 3: wallet + top-up + PPOB, tanpa KYC.

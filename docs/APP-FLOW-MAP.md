@@ -4,8 +4,7 @@ Status: **referensi hidup** · 18 Oktober 2026
 
 Dokumen ini memetakan flow app React Native dan kontrak API yang benar-benar
 dipakai app. Dokumen ini **bukan kontrak fase**. Kontrak fase ada di
-`FASE-2-API.md` dan `FASE-2.1-PIVOT.md`. Dokumen Fase 3 akan dibuat setelah
-D-10.
+`FASE-2-API.md` dan `FASE-2.1-PIVOT.md`. Dokumen Fase 3 akan dibuat setelah D-24 s/d D-30.
 
 Gunakan dokumen ini untuk menjawab: “layar ini memanggil endpoint apa, dengan
 tipe data apa, dan backend saat ini sudah punya atau belum?”
@@ -166,19 +165,19 @@ Perlu diselaraskan agar Redis mati → endpoint uang fail-closed.
 
 ## 5. Usulan urutan fase
 
-> Ini **usulan**, bukan keputusan. Scope final ada di `DECISIONS.md`,
-> khususnya D-10. Jika pivot PPOB menghapus wallet/KYC, urutan ini berubah.
+> Ini **usulan**, bukan keputusan. Scope final ada di `DECISIONS.md`
+> (D-09, D-10, D-13). Wallet + top-up dipertahankan; KYC dihapus.
 
-### Fase 3A — Wallet, Top-up, KYC, dan read bootstrap
+### Fase 3A — Wallet, Top-up, dan read bootstrap
 
-- Ledger double-entry + akun + saldo + limit.
+- Ledger double-entry + akun + saldo.
 - `GET /wallet`, `GET /wallet/topup-methods`, `POST /wallet/topups`,
   `GET /wallet/topups`, `GET /wallet/topups/{id}`, cancel.
-- `POST /me/kyc`, `GET /me/kyc`, `POST /me/kyc/{id}/face`.
 - `GET /transactions` read-only untuk Home/History.
 - `GET /notifications` read-only untuk badge Home.
 - `GET /catalog/services` read-only agar shortcut Home tidak kosong.
 - Callback Duitku + rekonsiliasi.
+- Tanpa KYC, tanpa face, tanpa file KTP.
 
 ### Fase 3B — Katalog/SDUI, inquiry, dan PPOB
 
@@ -189,18 +188,17 @@ Perlu diselaraskan agar Redis mati → endpoint uang fail-closed.
   `GET /transactions/{id}`, `GET /transactions/{id}/receipt`.
 - Adapter vendor PPOB (Digiflazz/Otomax), hold/refund, callback.
 
-### Fase 3C — Transfer, step-up, payment request, QRIS
+### Fase 3C — Transfer, step-up, payment request, QRIS — **ditunda**
 
-- `/transfers/recipients*`.
-- `/me/stepup/request`, `/me/stepup/verify`.
-- Transfer sesama pengguna dan transfer bank (BI-FAST).
+- `/transfers/recipients*`, transfer sesama/bank, step-up.
 - `/payment-requests*`, QRIS inquiry.
+- Ditunda karena scan/transfer coming soon (D-03).
 
 ### Fase 3D — Fitur pendukung
 
 - Promo, points, saved numbers, reminders, notifications lengkap,
   support, legal.
-- Admin panel untuk KYC review, transaksi, top-up, refund, katalog.
+- Admin panel untuk top-up, transaksi, refund, katalog. Tanpa admin KYC.
 
 ---
 
