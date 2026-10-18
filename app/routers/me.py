@@ -82,16 +82,16 @@ def update_profile(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    if payload.email is not None:
+        raise AppError(
+            "INVALID_VALUE",
+            message="Perubahan email harus lewat verifikasi email.",
+        )
+
     if payload.name is not None and payload.name != user.name:
         if user.kyc_status == KycStatus.VERIFIED:
             raise AppError("NAME_LOCKED")
         user.name = payload.name
-
-    if payload.email is not None and payload.email != user.email:
-        existing = db.scalar(select(User).where(User.email == str(payload.email)))
-        if existing is not None and existing.id != user.id:
-            raise AppError("EMAIL_ALREADY_USED")
-        user.email = str(payload.email)
 
     if payload.gender is not None:
         user.gender = payload.gender

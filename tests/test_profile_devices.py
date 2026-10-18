@@ -57,27 +57,25 @@ def test_access_with_wrong_device_header_is_rejected() -> None:
     assert response.json()["code"] == "DEVICE_MISMATCH"
 
 
-def test_profile_update_email_conflict_and_name_lock() -> None:
+def test_profile_update_rejects_email_and_name_lock() -> None:
     first = register()
     access = first["tokens"]["access_token"]
 
     response = client.patch(
         "/v1/me",
-        json={"name": "Koko Wijaya", "email": "koko@poinqu.id"},
+        json={"name": "Koko Wijaya"},
         headers=auth_headers(access),
     )
     assert response.status_code == 200, response.text
     assert response.json()["data"]["name"] == "Koko Wijaya"
-    assert response.json()["data"]["email"] == "koko@poinqu.id"
 
-    second = register(phone="081298765432", device_id=DEVICE_B)
     response = client.patch(
         "/v1/me",
         json={"email": "koko@poinqu.id"},
-        headers=auth_headers(second["tokens"]["access_token"], DEVICE_B),
+        headers=auth_headers(access),
     )
-    assert response.status_code == 409
-    assert response.json()["code"] == "EMAIL_ALREADY_USED"
+    assert response.status_code == 422
+    assert response.json()["code"] == "INVALID_VALUE"
 
     with SessionLocal() as db:
         user = db.scalar(select(User).where(User.phone == "081234567890"))
