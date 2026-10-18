@@ -34,14 +34,12 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 - [x] Tabel `email_messages` (metadata pengiriman, tanpa isi/kode).
 - [x] Tabel `contact_change_requests` (PHONE/EMAIL, status, OTP, expiry).
 - [x] Refactor `OtpSession`/service OTP ke `target`/`target_type` (phone lama tetap didukung).
-- [ ] Hapus router/tabel recovery setelah backup:
-      `phone_recoveries`, `recovery_requests`, `recovery_hold`,
-      `transfer_blocked_until` (bila tidak dipakai).
-- [ ] Hapus KYC: `kyc_profiles`, `kyc_status`, `level=PREMIUM` dari alur
-      aktif; tabel `kyc_submissions` tidak dibuat.
-- [ ] `user_biometrics.type` hanya menerima `FINGERPRINT` untuk data baru;
-      data lama `FACE` dibiarkan historis.
-- [ ] Migrasi wajib lewat Alembic, bukan `AUTO_CREATE_TABLES`.
+- [x] Hapus router/tabel recovery: `phone_recoveries`, `recovery_requests`,
+      `users.recovery_hold`, `users.transfer_blocked_until`.
+- [x] Hapus KYC aktif: `kyc_profiles` dihapus; `kyc_status`/`level` lama
+      dibiarkan sebagai legacy tetapi tidak dipakai API.
+- [x] API biometrik hanya menerima `FINGERPRINT`; data `FACE` lama historis.
+- [x] Migrasi lewat Alembic (`0001` baseline, `0002` OTP/email, `0003` hapus recovery/KYC).
 
 ---
 
@@ -63,8 +61,8 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ## 3. Auth publik
 
-**Status:** login/register/lupa PIN HP/email selesai (CI hijau, 19 Oktober 2026).
-Penghapusan face/recovery/KYC menyusul Sprint 5.
+**Status:** login/register/lupa PIN HP/email selesai; face/recovery/KYC sudah
+dihapus (CI hijau, 19 Oktober 2026).
 
 - [x] `POST /auth/register`: tambah `email` wajib, cek unik, OTP ke WA.
 - [x] `POST /auth/login/start`: `identifier` HP/email; respons generik.
@@ -74,10 +72,10 @@ Penghapusan face/recovery/KYC menyusul Sprint 5.
 - [ ] `POST /auth/otp/verify`: `next_step` untuk `VERIFY_EMAIL`,
       `CHANGE_PHONE`, `CHANGE_EMAIL` (Sprint 4).
 - [x] `POST /auth/pin/reset`: via OTP HP/email verified.
-- [ ] Hapus `POST /auth/login/face`.
-- [ ] Hapus seluruh route `/auth/phone-recovery*`.
-- [ ] Hapus `/me/kyc*` dan admin KYC.
-- [ ] Hapus `/me/biometrics/face`; challenge hanya FINGERPRINT.
+- [x] Hapus `POST /auth/login/face`.
+- [x] Hapus seluruh route `/auth/phone-recovery*`.
+- [x] Hapus `/me/kyc*` dan admin KYC.
+- [x] Hapus `/me/biometrics/face`; challenge hanya FINGERPRINT.
 
 ---
 
@@ -96,7 +94,7 @@ Penghapusan face/recovery/KYC menyusul Sprint 5.
 - [x] `POST /me/email/change/confirm`.
 - [x] Notifikasi ke kontak lama/email terverifikasi.
 - [x] `PATCH /me` tidak boleh mengubah email langsung.
-- [ ] Hapus `NAME_LOCKED` (KYC dihapus); nama boleh diubah (Sprint 5).
+- [x] Hapus `NAME_LOCKED` (KYC dihapus); nama boleh diubah.
 
 ---
 
