@@ -63,14 +63,17 @@ Dokumen kontrak: `FASE-2-API.md` + `FASE-2.1-PIVOT.md`.
 
 ## 3. Auth publik
 
-- [ ] `POST /auth/register`: tambah `email` wajib, cek unik, OTP ke WA.
-- [ ] `POST /auth/login/start`: `identifier` HP/email; respons generik.
-- [ ] `POST /auth/otp/request`: target HP/email; email hanya jika verified.
-- [ ] `POST /auth/otp/resend`: ikut target/channel sesi; decoy tetap kena
+**Status:** login/register/lupa PIN HP/email selesai (CI hijau, 19 Oktober 2026).
+Penghapusan face/recovery/KYC menyusul Sprint 5.
+
+- [x] `POST /auth/register`: tambah `email` wajib, cek unik, OTP ke WA.
+- [x] `POST /auth/login/start`: `identifier` HP/email; respons generik.
+- [x] `POST /auth/otp/request`: target HP/email; email hanya jika verified.
+- [x] `POST /auth/otp/resend`: ikut target/channel sesi; decoy tetap kena
       cooldown/limit.
 - [ ] `POST /auth/otp/verify`: `next_step` untuk `VERIFY_EMAIL`,
-      `CHANGE_PHONE`, `CHANGE_EMAIL`.
-- [ ] `POST /auth/pin/reset`: via OTP HP/email verified.
+      `CHANGE_PHONE`, `CHANGE_EMAIL` (Sprint 4).
+- [x] `POST /auth/pin/reset`: via OTP HP/email verified.
 - [ ] Hapus `POST /auth/login/face`.
 - [ ] Hapus seluruh route `/auth/phone-recovery*`.
 - [ ] Hapus `/me/kyc*` dan admin KYC.
