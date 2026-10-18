@@ -14,6 +14,7 @@ from argon2.exceptions import Argon2Error, InvalidHashError, VerificationError, 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from email_validator import EmailNotValidError, validate_email
 from jwt import ExpiredSignatureError, InvalidAudienceError, InvalidTokenError
 
 from app.config import settings
@@ -135,6 +136,19 @@ def mask_phone(phone: str) -> str:
     return f"{phone[:4]}****{phone[-4:]}"
 
 
+def mask_email(email: str) -> str:
+    local, separator, domain = email.partition("@")
+    if not separator:
+        return "***"
+    return f"{local[:2]}***@{domain}"
+
+
+def mask_identifier(value: str, target_type: str = "PHONE") -> str:
+    if target_type.upper() == "EMAIL":
+        return mask_email(value)
+    return mask_phone(value)
+
+
 def is_weak_pin(pin: str, phone: str | None = None) -> bool:
     if len(set(pin)) == 1:
         return True
@@ -187,3 +201,20 @@ def normalize_phone(value: str) -> str:
     if not digits.startswith("08") or not (9 <= len(digits) <= 13):
         raise AppError("INVALID_PHONE")
     return digits
+
+
+def normalize_email(value: str) -> str:
+    try:
+        result = validate_email(value, check_deliverability=False)
+    except EmailNotValidError as exc:
+        raise AppError("INVALID_EMAIL") from exc
+    return result.normalized.lower()
+
+
+def normalize_identifier(value: str) -> tuple[str, str]:
+    """Kembalikan (identifier, target_type) dari nomor HP atau email."""
+
+    value = (value or "").strip()
+    if "@" in value:
+        return normalize_email(value), "EMAIL"
+    return normalize_phone(value), "PHONE"

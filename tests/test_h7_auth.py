@@ -143,6 +143,7 @@ def test_register_existing_phone_is_anti_enumerated() -> None:
         json={
             "name": "Koko",
             "phone": "081234567890",
+            "email": "new-email@example.com",
             "gender": "MALE",
             "accept_terms": True,
         },

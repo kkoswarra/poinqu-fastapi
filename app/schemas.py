@@ -45,9 +45,16 @@ class DeviceInfo(BaseModel):
 
 
 class OtpRequestIn(BaseModel):
-    phone: Phone
+    phone: Phone | None = None
+    identifier: Annotated[str | None, Field(default=None, min_length=1, max_length=150)] = None
     purpose: OtpPurposeIn = "LOGIN"
-    channel: Literal["WHATSAPP"] = "WHATSAPP"
+    channel: Literal["WHATSAPP", "EMAIL"] | None = None
+
+    @model_validator(mode="after")
+    def check_identifier(self) -> OtpRequestIn:
+        if not self.phone and not self.identifier:
+            raise ValueError("REQUIRED")
+        return self
 
 
 class OtpVerifyIn(BaseModel):
@@ -66,13 +73,21 @@ class LoginPinIn(BaseModel):
 
 
 class LoginStartIn(BaseModel):
-    phone: Phone
+    phone: Phone | None = None
+    identifier: Annotated[str | None, Field(default=None, min_length=1, max_length=150)] = None
     device_id: Annotated[str, Field(min_length=1, max_length=64)]
+
+    @model_validator(mode="after")
+    def check_identifier(self) -> LoginStartIn:
+        if not self.phone and not self.identifier:
+            raise ValueError("REQUIRED")
+        return self
 
 
 class RegisterIn(BaseModel):
     name: PersonName
     phone: Phone
+    email: EmailStr
     gender: Gender
     accept_terms: bool = False
 

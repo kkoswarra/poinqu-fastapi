@@ -45,7 +45,12 @@ def test_register_and_profile_envelope() -> None:
 def test_register_terms_missing_is_rejected() -> None:
     response = client.post(
         "/v1/auth/register",
-        json={"name": "Koko", "phone": "081234567890", "gender": "MALE"},
+        json={
+            "name": "Koko",
+            "phone": "081234567890",
+            "email": "koko@example.com",
+            "gender": "MALE",
+        },
         headers=headers(),
     )
     assert response.status_code == 422
@@ -55,7 +60,13 @@ def test_register_terms_missing_is_rejected() -> None:
 def test_register_requires_terms_and_valid_phone() -> None:
     response = client.post(
         "/v1/auth/register",
-        json={"name": "Koko", "phone": "081234567890", "gender": "MALE", "accept_terms": False},
+        json={
+            "name": "Koko",
+            "phone": "081234567890",
+            "email": "koko@example.com",
+            "gender": "MALE",
+            "accept_terms": False,
+        },
         headers=headers(),
     )
     assert response.status_code == 422
@@ -63,7 +74,13 @@ def test_register_requires_terms_and_valid_phone() -> None:
 
     response = client.post(
         "/v1/auth/register",
-        json={"name": "Koko", "phone": "12345", "gender": "MALE", "accept_terms": True},
+        json={
+            "name": "Koko",
+            "phone": "12345",
+            "email": "koko@example.com",
+            "gender": "MALE",
+            "accept_terms": True,
+        },
         headers=headers(),
     )
     assert response.status_code == 422
@@ -205,6 +222,7 @@ def test_verification_token_single_use_and_purpose() -> None:
         json={
             "name": "Koko",
             "phone": "081234567890",
+            "email": "koko@example.com",
             "gender": "MALE",
             "accept_terms": True,
         },

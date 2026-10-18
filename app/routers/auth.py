@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, Request
@@ -14,7 +15,13 @@ from app.config import settings
 from app.core.clock import to_iso, utcnow
 from app.core.deps import client_ip, device_header, get_current_user
 from app.core.errors import AppError, ok
-from app.core.security import is_weak_pin, mask_phone
+from app.core.security import (
+    is_weak_pin,
+    mask_identifier,
+    mask_phone,
+    normalize_email,
+    normalize_identifier,
+)
 from app.db import get_db
 from app.models import (
     BiometricType,
@@ -43,7 +50,7 @@ from app.schemas import (
     RegisterIn,
     TokenRefreshIn,
 )
-from app.services import attestation, rate_limit
+from app.services import attestation, email as email_service, rate_limit, whatsapp
 from app.services import biometrics as bio_service
 from app.services import pin as pin_service
 from app.services import settings as settings_service
@@ -62,6 +69,7 @@ from app.services.auth import (
     verify_otp,
 )
 from app.services.profile import (
+    find_user_by_email,
     find_user_by_phone,
     mark_device_trusted,
     record_security_event,
@@ -120,20 +128,40 @@ def _login_methods(db: Session, user: User, request: Request) -> tuple[str, list
 @router.post("/otp/request", summary="Minta OTP")
 def otp_request(payload: OtpRequestIn, request: Request, db: Session = Depends(get_db)):
     purpose = OtpPurpose(payload.purpose)
-    if purpose == OtpPurpose.CHANGE_PHONE:
-        raise AppError("INVALID_VALUE", message="Gunakan alur pemulihan nomor.")
+    if purpose not in (OtpPurpose.LOGIN, OtpPurpose.FORGOT_PIN, OtpPurpose.REGISTER):
+        raise AppError("INVALID_VALUE", message="Gunakan alur yang sesuai.")
+
+    identifier = payload.identifier or payload.phone
+    if not identifier:
+        raise AppError("VALIDATION_ERROR", message="Nomor HP atau email wajib diisi.")
+    target, target_type = normalize_identifier(identifier)
+
+    if purpose == OtpPurpose.REGISTER and target_type == "EMAIL":
+        raise AppError(
+            "INVALID_VALUE",
+            message="OTP pendaftaran dikirim ke WhatsApp. Gunakan nomor HP.",
+        )
 
     attestation.verify_attestation(db, request)
     device_id = device_header(request)
     ip = client_ip(request)
-    user = find_user_by_phone(db, payload.phone)
+    user = (
+        find_user_by_phone(db, target)
+        if target_type == "PHONE"
+        else find_user_by_email(db, target)
+    )
 
     if purpose in (OtpPurpose.LOGIN, OtpPurpose.FORGOT_PIN):
-        if user is None:
-            # Anti-enumerasi (H.7.2): sesi palsu, tanpa pesan WhatsApp.
+        email_unverified = (
+            target_type == "EMAIL"
+            and (user is None or user.email_verified_at is None)
+        )
+        if user is None or email_unverified:
+            # Anti-enumerasi: sesi palsu, tanpa pesan.
             session = request_otp(
                 db,
-                phone=payload.phone,
+                target=target,
+                target_type=target_type,
                 purpose=purpose,
                 device_id=device_id,
                 ip=ip,
@@ -146,7 +174,8 @@ def otp_request(payload: OtpRequestIn, request: Request, db: Session = Depends(g
         # Nomor sudah terdaftar: balas sukses + pemberitahuan, bukan OTP.
         session = request_otp(
             db,
-            phone=payload.phone,
+            target=target,
+            target_type=target_type,
             purpose=purpose,
             device_id=device_id,
             ip=ip,
@@ -161,7 +190,8 @@ def otp_request(payload: OtpRequestIn, request: Request, db: Session = Depends(g
 
     session = request_otp(
         db,
-        phone=payload.phone,
+        target=target,
+        target_type=target_type,
         purpose=purpose,
         user=user,
         device_id=device_id,
@@ -222,10 +252,12 @@ def register(payload: RegisterIn, request: Request, db: Session = Depends(get_db
     attestation.verify_attestation(db, request)
     device_id = device_header(request)
     ip = client_ip(request)
-    existing = find_user_by_phone(db, payload.phone)
+    email = normalize_email(str(payload.email))
+    existing_phone = find_user_by_phone(db, payload.phone)
+    existing_email = find_user_by_email(db, email)
 
-    if existing is not None:
-        # Anti-enumerasi (H.7.2): respons identik, kirim pemberitahuan.
+    if existing_phone is not None or existing_email is not None:
+        # Anti-enumerasi: respons identik, pemberitahuan ke kontak yang ada.
         session = request_otp(
             db,
             phone=payload.phone,
@@ -233,23 +265,38 @@ def register(payload: RegisterIn, request: Request, db: Session = Depends(get_db
             device_id=device_id,
             ip=ip,
             decoy=True,
-            notification=(
-                "Nomor ini sudah punya akun Poinqu. Silakan masuk, "
-                "atau pakai Lupa PIN bila perlu."
-            ),
         )
+        with suppress(AppError):
+            if existing_phone is not None:
+                whatsapp.send_text(
+                    db,
+                    payload.phone,
+                    "Nomor ini sudah punya akun Poinqu. Silakan masuk, "
+                    "atau pakai Lupa PIN bila perlu.",
+                )
+            elif existing_email is not None:
+                email_service.send_notification(
+                    db,
+                    email,
+                    "Poinqu",
+                    "Email ini sudah terdaftar di Poinqu. Silakan masuk "
+                    "atau gunakan Lupa PIN.",
+                )
         db.commit()
         return ok(otp_public(session), "Kode OTP dikirim.")
 
     context = {
         "name": payload.name,
         "phone": payload.phone,
+        "email": email,
         "gender": payload.gender,
         "terms_accepted_at": to_iso(utcnow()),
     }
     session = request_otp(
         db,
         phone=payload.phone,
+        target=payload.phone,
+        target_type="PHONE",
         purpose=OtpPurpose.REGISTER,
         context=context,
         device_id=device_id,
@@ -266,6 +313,9 @@ def register_complete(payload: RegisterCompleteIn, request: Request, db: Session
     verification, session = validate_verification(db, payload.verification_token, OtpPurpose.REGISTER)
     context = session.context or {}
     phone = context.get("phone") or otp_target(session)
+    email = context.get("email")
+    if not email:
+        raise AppError("VALIDATION_ERROR", message="Email pendaftaran tidak ditemukan.")
 
     if payload.pin != payload.pin_confirmation:
         raise AppError("PIN_MISMATCH")
@@ -273,6 +323,8 @@ def register_complete(payload: RegisterCompleteIn, request: Request, db: Session
         raise AppError("PIN_TOO_WEAK")
     if find_user_by_phone(db, phone) is not None:
         raise AppError("PHONE_ALREADY_REGISTERED")
+    if find_user_by_email(db, email) is not None:
+        raise AppError("EMAIL_ALREADY_USED")
 
     from app.core.security import hash_secret
 
@@ -289,6 +341,8 @@ def register_complete(payload: RegisterCompleteIn, request: Request, db: Session
     user = User(
         phone=phone,
         name=context.get("name") or "Pengguna",
+        email=email,
+        email_verified_at=None,
         gender=context.get("gender"),
         pin_hash=hash_secret(payload.pin),
         level=UserLevel.BASIC,
@@ -326,7 +380,22 @@ def login_start(payload: LoginStartIn, request: Request, db: Session = Depends(g
     if ip:
         rate_limit.bump(db, "login_ip", ip, 3600)
 
-    user = find_user_by_phone(db, payload.phone)
+    identifier = payload.identifier or payload.phone
+    if not identifier:
+        raise AppError("VALIDATION_ERROR", message="Nomor HP atau email wajib diisi.")
+    target, target_type = normalize_identifier(identifier)
+
+    user = (
+        find_user_by_phone(db, target)
+        if target_type == "PHONE"
+        else find_user_by_email(db, target)
+    )
+    if target_type == "EMAIL" and (
+        user is None or user.email_verified_at is None
+    ):
+        # Email belum terverifikasi/tidak dikenal: bentuk respons tetap sama.
+        user = None
+
     device = None
     if user is not None:
         device = db.scalar(
@@ -348,7 +417,9 @@ def login_start(payload: LoginStartIn, request: Request, db: Session = Depends(g
             trusted = False
 
     base = {
-        "masked_phone": mask_phone(payload.phone),
+        "masked_phone": mask_phone(target) if target_type == "PHONE" else None,
+        "masked_identifier": mask_identifier(target, target_type),
+        "target_type": target_type,
         "verification_token": None,
         "expires_in": None,
         "preferred_method": None,
@@ -357,7 +428,9 @@ def login_start(payload: LoginStartIn, request: Request, db: Session = Depends(g
 
     if trusted and user is not None:
         _ensure_user_active(user)
-        raw = create_trusted_login_token(db, user, payload.phone, payload.device_id)
+        raw = create_trusted_login_token(
+            db, user, target, payload.device_id, target_type=target_type
+        )
         preferred, methods = _login_methods(db, user, request)
         db.commit()
         return ok(

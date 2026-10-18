@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -20,6 +20,8 @@ def user_public(user: User) -> dict:
         "name": user.name,
         "phone": user.phone,
         "email": user.email,
+        "email_verified": user.email_verified_at is not None,
+        "email_verified_at": to_iso(user.email_verified_at),
         "gender": user.gender,
         "avatar_url": avatar_url(user),
         "level": user.level.value,
@@ -161,6 +163,10 @@ def security_activity_public(db: Session, event: SecurityEvent) -> dict:
 
 def find_user_by_phone(db: Session, phone: str) -> User | None:
     return db.scalar(select(User).where(User.phone == phone))
+
+
+def find_user_by_email(db: Session, email: str) -> User | None:
+    return db.scalar(select(User).where(func.lower(User.email) == email.lower()))
 
 
 def current_device_for(db: Session, user: User, request: Request) -> Device | None:

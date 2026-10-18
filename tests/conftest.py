@@ -93,10 +93,18 @@ def register(
     pin: str = "246810",
     device_id: str = DEVICE_A,
     name: str = "Koko",
+    email: str | None = None,
 ) -> dict:
+    email = email or f"user{phone[-6:]}@example.com"
     response = client.post(
         "/v1/auth/register",
-        json={"name": name, "phone": phone, "gender": "MALE", "accept_terms": True},
+        json={
+            "name": name,
+            "phone": phone,
+            "email": email,
+            "gender": "MALE",
+            "accept_terms": True,
+        },
         headers=headers(device_id),
     )
     assert response.status_code == 200, response.text

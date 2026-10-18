@@ -296,16 +296,22 @@ def issue_verification(
 
 
 def create_trusted_login_token(
-    db: Session, user: User, phone: str, device_id: str
+    db: Session,
+    user: User,
+    target: str,
+    device_id: str,
+    *,
+    target_type: str = "PHONE",
 ) -> str:
     """Token LOGIN tanpa OTP untuk perangkat tepercaya (H.7.1)."""
     now = utcnow()
+    is_email = target_type.upper() == "EMAIL"
     session = OtpSession(
         public_id=public_id("otp"),
-        phone=phone,
-        target=phone,
-        target_type="PHONE",
-        channel="WHATSAPP",
+        phone=None if is_email else target,
+        target=target,
+        target_type="EMAIL" if is_email else "PHONE",
+        channel="EMAIL" if is_email else "WHATSAPP",
         user_id=user.id,
         purpose=OtpPurpose.LOGIN,
         code_hash=hash_secret(_new_code()),
