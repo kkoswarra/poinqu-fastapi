@@ -21,6 +21,11 @@ memakai kontrak yang sama sebelum Fase 3 dilanjutkan.
   maksimum.
 - **KYC dan Premium dihapus**; tidak ada face liveness, KTP, atau admin KYC.
 - **Domain final `poinqu`** (deep link `poinqu://`, web `https://poinqu.id`).
+- **Email wajib saat register**; OTP register tetap via WhatsApp.
+- **Verifikasi email memakai OTP** dan dikirim lewat **SMTP**.
+- **Ganti nomor HP**: PIN + OTP ke nomor baru via WhatsApp + notifikasi email.
+- **Ganti email**: PIN + OTP ke email baru via SMTP + notifikasi kontak lama.
+- **Recovery backend dihapus total**, bukan hanya disembunyikan dari app.
 - Regulasi e-money tidak lagi menjadi fokus utama; tetap perlu review untuk
   penyimpanan saldo/top-up bila fitur itu dipertahankan.
 - **Biometric wajah dihapus**; sidik jari tetap.
@@ -234,9 +239,9 @@ Body tetap:
 { "new_phone": "081298765432", "pin_token": "pt_..." }
 ```
 
-- Bisa juga memakai `X-Pin-Token` purpose `CHANGE_PHONE`.
+- Wajib PIN token purpose `CHANGE_PHONE` (atau field `pin_token`).
 - Cek nomor baru belum dipakai.
-- Kirim OTP ke nomor baru via WhatsApp.
+- Kirim OTP ke **nomor baru** via WhatsApp; jangan kirim OTP ke nomor lama.
 
 `POST /me/phone/change/confirm` · Auth: Bearer
 
@@ -255,8 +260,9 @@ Body tetap:
 { "new_email": "koko.baru@example.com", "pin_token": "pt_..." }
 ```
 
+- Wajib PIN token purpose `CHANGE_EMAIL` (atau field `pin_token`).
 - Cek email baru belum dipakai.
-- Kirim OTP ke email baru.
+- Kirim OTP ke **email baru** via SMTP; jangan kirim OTP ke email lama.
 
 `POST /me/email/change/confirm` · Auth: Bearer
 
@@ -452,31 +458,27 @@ ini.
 
 ## 9. Keputusan
 
-Jangan menambah daftar keputusan di dokumen ini. Semua keputusan yang
-memblokir Fase 2.1 ada di `DECISIONS.md`:
+Semua keputusan Fase 2.1 sudah **CONFIRMED** di `DECISIONS.md`:
 
-- **D-18** — email wajib saat register?
-- **D-19** — provider email OTP.
-- **D-20** — syarat ganti nomor HP.
-- **D-21** — syarat ganti email.
-- **D-22** — endpoint recovery dihapus/deprecated.
+- D-18 email wajib saat register.
+- D-19 email OTP via SMTP.
+- D-20 ganti nomor HP: PIN + OTP ke nomor baru.
+- D-21 ganti email: PIN + OTP ke email baru.
+- D-22 recovery backend dihapus.
 
-Sudah final: wallet + top-up (D-10), KYC dihapus (D-13), domain
-`poinqu` (D-12), verifikasi email OTP (D-11), batas top-up admin DB (D-14).
-
-Rekomendasi awal ada di `DECISIONS.md`. Setelah dijawab, update dokumen ini
-dan `FASE-2-API.md`.
+Yang masih terbuka hanya untuk Fase 3/ops: D-24 (Duitku sandbox), D-31
+(SMTP from/limit), D-32 (minimum top-up).
 
 ---
 
 ## 10. Urutan kerja yang disarankan
 
-1. Jawab keputusan **D-18 s/d D-22** di `DECISIONS.md`.
-2. Update `FASE-2-API.md` menjadi **Fase 2.1** (auth email/phone, tanpa face,
-   tanpa recovery di app).
-3. Update skema + migrasi Alembic.
-4. Implementasi email gateway + OTP generic.
-5. Implementasi endpoint email verification + change phone/email.
+1. Update `FASE-2-API.md` menjadi **Fase 2.1** (auth email/phone, tanpa face,
+   tanpa recovery).
+2. Update skema + migrasi Alembic.
+3. Implementasi email gateway SMTP + OTP generic.
+4. Implementasi endpoint email verification + change phone/email.
+5. Hapus endpoint/tabel recovery.
 6. Update app: register email, login method switch, forgot PIN method,
    home banner, account change, hapus LostPhone/face, scan/transfer disabled.
 7. Baru lanjut Fase 3: wallet + top-up + PPOB, tanpa KYC.
