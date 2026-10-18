@@ -29,3 +29,10 @@ def test_cors_lan_origin_allowed_di_non_produksi():
     response = _preflight(origin)
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_respons_guard_tanpa_device_id_tetap_punya_header_cors():
+    origin = "http://localhost:8081"
+    response = client.get("/v1/me", headers={"Origin": origin})
+    assert response.status_code == 422
+    assert response.headers["access-control-allow-origin"] == origin

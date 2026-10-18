@@ -76,24 +76,6 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
-    # Expo web bisa berpindah port (8081/8082/19006) dan diakses lewat IP LAN
-    # saat testing di perangkat. Origin lokal ini hanya untuk non-produksi.
-    allow_origin_regex=(
-        r"^https?://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
-        r"192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})"
-        r"(:\d+)?$"
-        if settings.ENVIRONMENT != "production"
-        else None
-    ),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Request-ID", "Retry-After"],
-)
-
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
@@ -150,6 +132,28 @@ async def request_context(request: Request, call_next):
     response = guard_response if guard_response is not None else await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
+
+
+# CORS harus didaftarkan setelah middleware request_context agar menjadi
+# lapisan terluar. Dengan begitu respons guard (mis. 422 tanpa X-Device-Id)
+# tetap membawa Access-Control-Allow-Origin dan tidak tampak sebagai CORS error.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
+    # Expo web bisa berpindah port (8081/8082/19006) dan diakses lewat IP LAN
+    # saat testing di perangkat. Origin lokal ini hanya untuk non-produksi.
+    allow_origin_regex=(
+        r"^https?://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+        r"192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})"
+        r"(:\d+)?$"
+        if settings.ENVIRONMENT != "production"
+        else None
+    ),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-ID", "Retry-After"],
+)
 
 
 app.include_router(auth.router, prefix=settings.API_PREFIX)
