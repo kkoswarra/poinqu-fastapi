@@ -25,7 +25,7 @@ Status:
 | D-06 | Login dan lupa PIN memakai **nomor HP atau email**. Nomor → OTP WA; email terverifikasi → OTP email. | Kontrak `login/start`, `otp/request`, `pin/reset` | `FASE-2.1-PIVOT.md` |
 | D-07 | Verifikasi email **opsional**. Jika terverifikasi, email bisa untuk login, lupa PIN, dan ganti nomor HP. | Banner Home, endpoint verifikasi email | `FASE-2.1-PIVOT.md` |
 | D-08 | Nomor HP dan email **bisa diganti** dari halaman akun. | Endpoint change phone/email, notifikasi | `FASE-2.1-PIVOT.md` |
-| D-09 | Fase 3A sebelumnya dipilih: wallet + top-up + KYC + read bootstrap; Duitku VA/QRIS; KYC manual. | Scope Fase 3 | `FASE-3-API.md` |
+| D-09 | Fase 3A sebelumnya dipilih: wallet + top-up + KYC + read bootstrap; Duitku VA/QRIS; KYC manual. | Scope Fase 3 | Dihapus sementara; disusun ulang setelah D-10 |
 
 > D-09 perlu **dikonfirmasi ulang** setelah D-01 (pivot PPOB). Lihat D-10.
 

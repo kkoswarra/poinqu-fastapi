@@ -4,7 +4,8 @@ Status: **referensi hidup** · 18 Oktober 2026
 
 Dokumen ini memetakan flow app React Native dan kontrak API yang benar-benar
 dipakai app. Dokumen ini **bukan kontrak fase**. Kontrak fase ada di
-`FASE-2-API.md`, `FASE-2.1-PIVOT.md`, dan `FASE-3-API.md`.
+`FASE-2-API.md` dan `FASE-2.1-PIVOT.md`. Dokumen Fase 3 akan dibuat setelah
+D-10.
 
 Gunakan dokumen ini untuk menjawab: “layar ini memanggil endpoint apa, dengan
 tipe data apa, dan backend saat ini sudah punya atau belum?”
@@ -210,9 +211,7 @@ Peta ini dipakai bersama:
 - `docs/README.md` — indeks dan urutan baca.
 - `docs/DECISIONS.md` — satu daftar keputusan.
 - `docs/FASE-2.1-PIVOT.md` — perubahan auth setelah pivot PPOB.
-- `docs/FASE-3-API.md` — draft kontrak fase berikutnya.
-- `docs/FASE-3-FLOW.md` — flow app untuk fase berikutnya.
-- `docs/FASE-3-TASKS.md` — checklist implementasi.
+- `docs/FASE-2-API.md` — kontrak fondasi yang sudah berjalan.
 
 ## 7. Keputusan
 

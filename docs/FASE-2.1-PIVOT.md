@@ -411,7 +411,7 @@ Ini bagian yang perlu dikonfirmasi karena bertentangan dengan kalimat
 “tidak ada perubahan di Fase 3”:
 
 - **Jika wallet/top-up/KYC tetap dipakai**:
-  - `FASE-3-API.md` sebagian besar tetap.
+  - Dokumen Fase 3 disusun ulang setelah D-10; draft lama sudah dihapus.
   - KYC tidak lagi memakai face liveness; cukup KTP + manual review atau
     provider tanpa face.
   - Transfer/scan tetap ditunda.

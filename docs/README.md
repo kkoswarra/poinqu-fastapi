@@ -10,9 +10,9 @@ Indeks dokumen. Mulai dari sini sebelum membaca kontrak atau menulis kode.
   Fonnte. Sudah berjalan.
 - **Fase 2.1** — pivot produk ke **pulsa & PPOB** dan rework auth
   (email/nomor HP, hapus face, hapus recovery di app). **Sedang diputuskan.**
-- **Fase 3A** — draft wallet/top-up/KYC/read bootstrap. **Belum final**;
-  menunggu keputusan D-10 (apakah wallet/top-up/KYC tetap dipakai setelah
-  pivot).
+- **Fase 3** — belum disusun. Draft Fase 3A lama (wallet/top-up/KYC) sudah
+  dihapus karena scope-nya bergantung pada **D-10**. Dokumen baru akan dibuat
+  setelah keputusan itu.
 
 Jangan implementasi Fase 3 sebelum keputusan yang memblokir di
 `DECISIONS.md` selesai.
@@ -26,28 +26,21 @@ Jangan implementasi Fase 3 sebelum keputusan yang memblokir di
 1. `PLAN.md` — visi, aturan bisnis, fase (perhatikan banner pivot).
 2. `DECISIONS.md` — keputusan yang sudah dan belum final.
 3. `FASE-2.1-PIVOT.md` — perubahan produk/auth terbaru.
-4. `FASE-3-API.md` — scope fase berikutnya (draft).
 
 ### Untuk backend
 
 1. `FASE-2-API.md` — kontrak fondasi yang sudah berjalan.
 2. `FASE-2.1-PIVOT.md` — perubahan yang harus diimplementasikan.
 3. `APP-FLOW-MAP.md` — endpoint yang benar-benar dipanggil app.
-4. `FASE-3-API.md` — kontrak berikutnya (setelah keputusan).
-5. `FASE-3-TASKS.md` — checklist implementasi.
 
 ### Untuk mobile
 
 1. `APP-FLOW-MAP.md` — layar → hook → endpoint.
 2. `FASE-2.1-PIVOT.md` — perubahan auth/akun.
-3. `FASE-3-FLOW.md` — flow fase berikutnya.
-4. `FASE-3-API.md` — bentuk request/response.
 
 ### Untuk QA
 
 1. `FASE-2-API.md` + `FASE-2.1-PIVOT.md` — kontrak yang diuji.
-2. `FASE-3-API.md` — endpoint dan error.
-3. `FASE-3-TASKS.md` — test wajib dan definition of done.
 
 ---
 
@@ -60,9 +53,6 @@ Jangan implementasi Fase 3 sebelum keputusan yang memblokir di
 | `FASE-2-API.md` | **baseline** | Kontrak Fase 2 yang sudah berjalan |
 | `FASE-2.1-PIVOT.md` | **change spec** | Pivot PPOB + rework auth email/phone, tanpa face/recovery |
 | `APP-FLOW-MAP.md` | referensi | Peta flow app dan cakupan backend |
-| `FASE-3-API.md` | **draft** | Kontrak Fase 3A: wallet/top-up/KYC/read bootstrap |
-| `FASE-3-FLOW.md` | **draft** | Flow app untuk Fase 3A |
-| `FASE-3-TASKS.md` | **draft** | Checklist implementasi Fase 3A |
 
 ---
 
@@ -74,7 +64,7 @@ Urutan prioritas saat ada pertentangan:
 2. **Kontrak fase yang berlaku**:
    - Fase 2 → `FASE-2-API.md`
    - perubahan Fase 2 → `FASE-2.1-PIVOT.md`
-   - Fase 3 → `FASE-3-API.md` (setelah keputusan)
+   - Fase 3 → belum ada; akan dibuat setelah D-10
 3. **`app-frontend/src/api/types/*` + `src/api/endpoints/*`** — bentuk data yang
    benar-benar dipakai app. Jika app dan dokumen berbeda, catat sebagai
    keputusan/perubahan kontrak; jangan diam-diam mengikuti salah satu.
@@ -91,10 +81,9 @@ Aturan: jika `FASE-2.1-PIVOT.md` bertentangan dengan `FASE-2-API.md`,
 ## 5. Alur dokumen saat ada perubahan
 
 1. Tambah/ubah keputusan di `DECISIONS.md` (beri ID).
-2. Update kontrak fase (`FASE-2-API.md`, `FASE-2.1-PIVOT.md`, atau
-   `FASE-3-API.md`).
+2. Update kontrak fase (`FASE-2-API.md` atau `FASE-2.1-PIVOT.md`).
 3. Update `APP-FLOW-MAP.md` bila flow app berubah.
-4. Update `FASE-3-FLOW.md`/`FASE-3-TASKS.md` bila scope fase berubah.
+4. Buat/ubah dokumen Fase 3 hanya setelah D-10 selesai.
 5. Baru implementasi kode.
 6. Commit dokumen bersama kode agar kontrak dan implementasi tidak drift.
 
@@ -105,8 +94,8 @@ Aturan: jika `FASE-2.1-PIVOT.md` bertentangan dengan `FASE-2-API.md`,
 - Bahasa: Indonesia; istilah teknis boleh Inggris.
 - Uang: integer rupiah.
 - Waktu: ISO 8601 UTC; bulan limit memakai WIB.
-- Kode error: HARUS ada di `FASE-2-API.md`/`FASE-3-API.md` dan app
-  `src/lib/errors.ts`.
+- Kode error: HARUS ada di `FASE-2-API.md`/`FASE-2.1-PIVOT.md` (atau kontrak
+  fase yang berlaku) dan app `src/lib/errors.ts`.
 - Setiap endpoint baru wajib punya:
   - method + path,
   - auth/header,
@@ -123,4 +112,4 @@ Aturan: jika `FASE-2.1-PIVOT.md` bertentangan dengan `FASE-2-API.md`,
 1. Jawab keputusan **D-10 s/d D-19** di `DECISIONS.md`.
 2. Update `FASE-2.1-PIVOT.md` bila jawaban mengubah kontrak.
 3. Implementasi Fase 2.1 (email/phone auth, hapus face/recovery di app).
-4. Setelah Fase 2.1 stabil, finalkan `FASE-3-API.md` dan mulai implementasi.
+4. Setelah Fase 2.1 stabil dan D-10 final, susun dokumen Fase 3 baru.
