@@ -83,18 +83,20 @@ Penghapusan face/recovery/KYC menyusul Sprint 5.
 
 ## 4. Akun & kontak
 
-- [ ] `GET /me`: tambah `email_verified`, `email_verified_at`.
-- [ ] `POST /me/email/verification/request` (OTP ke email).
-- [ ] `POST /me/email/verification/verify`.
-- [ ] `POST /me/phone/change/request`: PIN token `CHANGE_PHONE` + OTP ke
+**Status:** selesai (CI hijau, 19 Oktober 2026).
+
+- [x] `GET /me`: tambah `email_verified`, `email_verified_at`.
+- [x] `POST /me/email/verification/request` (OTP ke email).
+- [x] `POST /me/email/verification/verify`.
+- [x] `POST /me/phone/change/request`: PIN token `CHANGE_PHONE` + OTP ke
       nomor baru via WA.
-- [ ] `POST /me/phone/change/confirm`.
-- [ ] `POST /me/email/change/request`: PIN token `CHANGE_EMAIL` + OTP ke
+- [x] `POST /me/phone/change/confirm`.
+- [x] `POST /me/email/change/request`: PIN token `CHANGE_EMAIL` + OTP ke
       email baru via SMTP.
-- [ ] `POST /me/email/change/confirm`.
-- [ ] Notifikasi ke kontak lama/email terverifikasi.
-- [ ] `PATCH /me` tidak boleh mengubah email langsung.
-- [ ] Hapus `NAME_LOCKED` (KYC dihapus); nama boleh diubah.
+- [x] `POST /me/email/change/confirm`.
+- [x] Notifikasi ke kontak lama/email terverifikasi.
+- [x] `PATCH /me` tidak boleh mengubah email langsung.
+- [ ] Hapus `NAME_LOCKED` (KYC dihapus); nama boleh diubah (Sprint 5).
 
 ---
 
