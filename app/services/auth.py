@@ -190,10 +190,6 @@ def resend_otp(db: Session, session_public_id: str) -> OtpSession:
     whatsapp.ensure_provider_healthy(db)
 
     session = get_otp_session(db, session_public_id)
-    if session.is_decoy:
-        equalize_timing()
-        return session
-
     now = utcnow()
 
     retry_after = seconds_until(session.last_sent_at + timedelta(seconds=settings.OTP_RESEND_COOLDOWN))
@@ -204,12 +200,17 @@ def resend_otp(db: Session, session_public_id: str) -> OtpSession:
         raise AppError("OTP_RESEND_LIMIT")
 
     code = _new_code()
-    try:
-        # Kirim dulu; state sesi baru diubah bila provider menerima.
-        whatsapp.send_otp(db, session, code)
-    except AppError:
-        db.commit()
-        raise
+    if session.is_decoy:
+        # Anti-enumerasi (H.7.2): sesi palsu harus melewati aturan cooldown,
+        # batas kirim ulang, dan bentuk respons yang sama tanpa mengirim WhatsApp.
+        equalize_timing()
+    else:
+        try:
+            # Kirim dulu; state sesi baru diubah bila provider menerima.
+            whatsapp.send_otp(db, session, code)
+        except AppError:
+            db.commit()
+            raise
 
     session.code_hash = hash_secret(code)
     session.resend_count += 1

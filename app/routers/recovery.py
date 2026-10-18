@@ -76,6 +76,12 @@ def _attempts_left(counter: AttemptCounter) -> int:
     return max(0, settings.RECOVERY_MAX_ATTEMPTS - counter.count)
 
 
+def _age_on(birth_date: date, today: date) -> int:
+    return today.year - birth_date.year - (
+        (today.month, today.day) < (birth_date.month, birth_date.day)
+    )
+
+
 def _get_recovery(db: Session, recovery_public_id: str) -> PhoneRecovery:
     recovery = db.scalar(select(PhoneRecovery).where(PhoneRecovery.public_id == recovery_public_id))
     if recovery is None:
@@ -100,6 +106,8 @@ def start_recovery(payload: PhoneRecoveryStartIn, request: Request, db: Session 
 
     if payload.birth_date >= date.today():
         raise AppError("INVALID_DATE", message="Tanggal lahir tidak valid.")
+    if _age_on(payload.birth_date, date.today()) < 17:
+        raise AppError("INVALID_DATE", message="Usia minimal 17 tahun.")
 
     profile = db.scalar(select(KycProfile).where(KycProfile.nik_hash == _nik_hash(payload.nik)))
     user = db.get(User, profile.user_id) if profile else None

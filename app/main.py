@@ -32,6 +32,7 @@ from app.core.errors import (
     unhandled_exception_handler,
     validation_error_handler,
 )
+from app.core.openapi import build_openapi
 from app.db import SessionLocal, init_schema
 from app.routers import admin, auth, me, recovery, webhooks
 from app.services import wa
@@ -82,6 +83,16 @@ app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
+
+
+def custom_openapi() -> dict:
+    if app.openapi_schema:
+        return app.openapi_schema
+    app.openapi_schema = build_openapi(app)
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 def _version_tuple(value: str) -> tuple[int, ...]:

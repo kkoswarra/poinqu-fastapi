@@ -266,7 +266,10 @@ def issue_admin_tokens(
 
 
 def verify_admin_2fa(db: Session, challenge_token: str, code: str, ip: str) -> tuple[dict, Admin]:
-    payload = decode_admin_challenge(challenge_token)
+    try:
+        payload = decode_admin_challenge(challenge_token)
+    except AppError as exc:
+        raise AppError("ADMIN_2FA_REQUIRED") from exc
     try:
         admin_id = uuid.UUID(str(payload.get("sub")))
     except (ValueError, TypeError) as exc:

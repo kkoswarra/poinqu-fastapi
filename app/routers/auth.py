@@ -400,10 +400,14 @@ def login_pin(payload: LoginPinIn, request: Request, db: Session = Depends(get_d
 
 @router.post("/biometric/challenge", summary="Challenge biometrik")
 def biometric_challenge(payload: BiometricChallengeIn, request: Request, db: Session = Depends(get_db)):
-    _ensure_device_match(request, payload.device_id)
+    # Kompatibilitas app: device_id boleh tidak dikirim; pakai X-Device-Id.
+    device_id_value = payload.device_id or device_header(request)
+    if not device_id_value:
+        raise AppError("DEVICE_MISMATCH", status=422)
+    _ensure_device_match(request, device_id_value)
     attestation.verify_attestation(db, request)
     verification, session = validate_verification(db, payload.verification_token, OtpPurpose.LOGIN)
-    if verification.device_id and verification.device_id != payload.device_id:
+    if verification.device_id and verification.device_id != device_id_value:
         raise AppError("DEVICE_MISMATCH", status=422)
     user = db.get(User, session.user_id) if session.user_id else None
     if user is None:
@@ -412,7 +416,7 @@ def biometric_challenge(payload: BiometricChallengeIn, request: Request, db: Ses
     device = db.scalar(
         select(Device).where(
             Device.user_id == user.id,
-            Device.device_id == payload.device_id,
+            Device.device_id == device_id_value,
             Device.revoked_at.is_(None),
         )
     )

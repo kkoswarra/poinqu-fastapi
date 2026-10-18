@@ -920,7 +920,6 @@ Menerbitkan challenge acak untuk ditandatangani app memakai private key biometri
 ```json
 {
   "verification_token": "vt_c91f0b6a7e24...",
-  "device_id": "dev_and_91ab3c",
   "type": "FINGERPRINT"
 }
 ```
@@ -928,6 +927,7 @@ Menerbitkan challenge acak untuk ditandatangani app memakai private key biometri
 Validasi:
 
 - `type`: `FINGERPRINT` | `FACE` (default `FINGERPRINT`)
+- `device_id`: opsional. Bila tidak dikirim, backend memakai header `X-Device-Id`. Bila dikirim, nilainya harus sama dengan header tersebut.
 
 **Respons sukses** — HTTP 200
 

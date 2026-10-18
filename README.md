@@ -382,9 +382,12 @@ higiene log). Tes Fonnte memakai `httpx.MockTransport` (tanpa kuota).
 - **Avatar lokal** di `media/avatars`; ganti object storage.
 - **Rate limit** OTP/PIN/recovery memakai tabel DB; Redis hanya untuk
   pencabutan token. Rate limit umum per-IP perlu ditambah di gateway/WAF.
-- **Status HTTP admin**: mengikuti kode error; beberapa status sedikit
-  berbeda dari tabel dokumen (mis. kredensial admin 401, lock 423), app
-  bergantung pada `code`.
+- **Status HTTP admin**: mengikuti H.7 (kredensial, 2FA, dan lock memakai
+  422); bagian 2.15 dokumen masih menulis 401/423, tetapi H.7 yang berlaku.
+  App bergantung pada `code`.
+- **OpenAPI**: envelope `ApiResponse`/`ErrorResponse`, error umum, header,
+  dan security sudah didokumentasikan lewat `app/core/openapi.py`; model data
+  spesifik per endpoint menyusul.
 - `AUTO_CREATE_TABLES` + rekonsiliasi kolom hanya untuk dev; gunakan Alembic.
 - Waktu disimpan UTC (naive) dan diserialisasi ISO 8601 `Z`.
 - Nominal uang fase berikutnya wajib integer rupiah, bukan float.

@@ -1,4 +1,8 @@
-"""Schema request (validasi input). Respons dibentuk eksplisit oleh serializer."""
+"""Schema request dan model dokumentasi respons.
+
+Respons aktual dibentuk eksplisit oleh serializer di lapisan service/router;
+model ``ApiResponse``/``ErrorResponse`` dipakai untuk dokumentasi OpenAPI.
+"""
 
 from __future__ import annotations
 
@@ -88,7 +92,7 @@ class RegisterCompleteIn(BaseModel):
 
 class BiometricChallengeIn(BaseModel):
     verification_token: Annotated[str, Field(min_length=1)]
-    device_id: Annotated[str, Field(min_length=1, max_length=64)]
+    device_id: Annotated[str | None, Field(default=None, max_length=64)] = None
     type: BiometricKind = "FINGERPRINT"
 
 
@@ -268,3 +272,45 @@ class SettingUpdateIn(BaseModel):
     value: Any
     version: int
     reason: Annotated[str, StringConstraints(min_length=10, max_length=300)]
+
+
+# ------------------------------------------------- respons (dokumentasi OpenAPI)
+
+
+class MetaOut(BaseModel):
+    request_id: str = Field(description="ID request untuk korelasi log.")
+    timestamp: str = Field(description="Waktu respons ISO 8601 UTC.")
+
+
+class ApiResponse(BaseModel):
+    """Envelope respons sukses (bagian 1.1 dokumen API)."""
+
+    success: bool = Field(default=True, description="Selalu true untuk respons sukses.")
+    code: str = Field(default="OK", description="Kode sukses; saat ini selalu OK.")
+    message: str = Field(default="Berhasil.", description="Pesan yang aman ditampilkan ke pengguna.")
+    data: Any = Field(default=None, description="Payload endpoint; null bila tidak ada.")
+    meta: MetaOut
+
+
+class ErrorItem(BaseModel):
+    field: str = Field(description="Nama field yang gagal divalidasi.")
+    code: str = Field(description="Kode error field, mis. REQUIRED atau INVALID_PHONE.")
+    message: str = Field(description="Pesan error untuk field tersebut.")
+
+
+class ErrorResponse(BaseModel):
+    """Envelope respons gagal (bagian 1.2 dokumen API)."""
+
+    success: bool = Field(default=False, description="Selalu false untuk respons gagal.")
+    code: str = Field(
+        description=(
+            "Kode error, mis. VALIDATION_ERROR, PIN_INVALID, OTP_RATE_LIMITED, "
+            "PIN_LOCKED, atau REFRESH_TOKEN_REVOKED."
+        )
+    )
+    message: str = Field(description="Pesan error berbahasa Indonesia.")
+    errors: list[ErrorItem] | None = Field(
+        default=None, description="Rincian validasi; hanya ada pada error validasi."
+    )
+    details: Any = Field(default=None, description="Detail tambahan yang berbeda per kode.")
+    meta: MetaOut

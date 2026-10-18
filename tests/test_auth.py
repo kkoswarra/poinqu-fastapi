@@ -42,6 +42,16 @@ def test_register_and_profile_envelope() -> None:
     assert body["meta"]["timestamp"].endswith("Z")
 
 
+def test_register_terms_missing_is_rejected() -> None:
+    response = client.post(
+        "/v1/auth/register",
+        json={"name": "Koko", "phone": "081234567890", "gender": "MALE"},
+        headers=headers(),
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "TERMS_NOT_ACCEPTED"
+
+
 def test_register_requires_terms_and_valid_phone() -> None:
     response = client.post(
         "/v1/auth/register",
@@ -136,6 +146,44 @@ def test_otp_resend_cooldown_and_limit() -> None:
     )
     assert response.status_code == 429
     assert response.json()["code"] == "OTP_RESEND_LIMIT"
+
+
+def test_otp_resend_decoy_matches_real_session() -> None:
+    response = otp_request("089999999999", "LOGIN")
+    assert response.status_code == 200
+    session_id = response.json()["data"]["otp_session_id"]
+    assert "089999999999" not in gateway.sent
+
+    # Cooldown harus sama dengan sesi nomor terdaftar.
+    response = client.post(
+        "/v1/auth/otp/resend", json={"otp_session_id": session_id}, headers=headers()
+    )
+    assert response.status_code == 429
+    assert response.json()["code"] == "OTP_RESEND_TOO_SOON"
+
+    for expected_remaining in (2, 1, 0):
+        with SessionLocal() as db:
+            session = db.scalar(select(OtpSession).where(OtpSession.public_id == session_id))
+            session.last_sent_at = utcnow() - timedelta(seconds=60)
+            db.commit()
+        response = client.post(
+            "/v1/auth/otp/resend", json={"otp_session_id": session_id}, headers=headers()
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["data"]["resend_remaining"] == expected_remaining
+
+    with SessionLocal() as db:
+        session = db.scalar(select(OtpSession).where(OtpSession.public_id == session_id))
+        session.last_sent_at = utcnow() - timedelta(seconds=60)
+        db.commit()
+    response = client.post(
+        "/v1/auth/otp/resend", json={"otp_session_id": session_id}, headers=headers()
+    )
+    assert response.status_code == 429
+    assert response.json()["code"] == "OTP_RESEND_LIMIT"
+
+    # Sesi palsu tidak pernah mengirim WhatsApp.
+    assert "089999999999" not in gateway.sent
 
 
 def test_verification_token_single_use_and_purpose() -> None:

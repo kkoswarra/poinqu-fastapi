@@ -87,21 +87,21 @@ def test_admin_lock_after_failed_logins() -> None:
             "/v1/admin/auth/login",
             json={"email": ADMIN_EMAIL, "password": "password-salah"},
         )
-        assert response.status_code == 401
+        assert response.status_code == 422
         assert response.json()["code"] == "ADMIN_CREDENTIALS_INVALID"
 
     response = client.post(
         "/v1/admin/auth/login",
         json={"email": ADMIN_EMAIL, "password": "password-salah"},
     )
-    assert response.status_code == 423
+    assert response.status_code == 422
     assert response.json()["code"] == "ADMIN_LOCKED"
 
     response = client.post(
         "/v1/admin/auth/login",
         json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
     )
-    assert response.status_code == 423
+    assert response.status_code == 422
     assert response.json()["code"] == "ADMIN_LOCKED"
 
     with SessionLocal() as db:
@@ -117,6 +117,30 @@ def test_admin_lock_after_failed_logins() -> None:
     assert response.json()["data"]["twofa_required"] is True
 
 
+def test_admin_2fa_setup_accepts_challenge_without_bearer() -> None:
+    response = client.post(
+        "/v1/admin/auth/login",
+        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+    )
+    challenge = response.json()["data"]["challenge_token"]
+
+    response = client.post(
+        "/v1/admin/auth/2fa/setup",
+        json={"challenge_token": challenge},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["secret"]
+
+
+def test_admin_2fa_requires_valid_challenge() -> None:
+    response = client.post(
+        "/v1/admin/auth/2fa/verify",
+        json={"challenge_token": "token-tidak-valid", "code": "000000"},
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "ADMIN_2FA_REQUIRED"
+
+
 def test_admin_wrong_2fa_code() -> None:
     response = client.post(
         "/v1/admin/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
@@ -126,7 +150,7 @@ def test_admin_wrong_2fa_code() -> None:
         "/v1/admin/auth/2fa/verify",
         json={"challenge_token": challenge, "code": "000000"},
     )
-    assert response.status_code == 401
+    assert response.status_code == 422
     assert response.json()["code"] == "ADMIN_2FA_INVALID"
 
     response = client.post(

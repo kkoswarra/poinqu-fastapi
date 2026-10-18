@@ -15,6 +15,7 @@ from app.db import SessionLocal
 from app.models import KycProfile, KycStatus, User
 from tests.conftest import (
     DEVICE_A,
+    DEVICE_B,
     auth_headers,
     client,
     device_info,
@@ -54,14 +55,48 @@ def _pin_token(access: str) -> str:
     return response.json()["data"]["pin_token"]
 
 
-def _challenge(token: str) -> dict:
+def _challenge(token: str, device_id: str | None = None) -> dict:
+    payload = {"verification_token": token, "type": "FINGERPRINT"}
+    if device_id is not None:
+        payload["device_id"] = device_id
     response = client.post(
         "/v1/auth/biometric/challenge",
-        json={"verification_token": token, "device_id": DEVICE_A, "type": "FINGERPRINT"},
+        json=payload,
         headers=headers(),
     )
     assert response.status_code == 200, response.text
     return response.json()["data"]
+
+
+def test_biometric_challenge_uses_header_when_device_id_omitted() -> None:
+    data = register()
+    access = data["tokens"]["access_token"]
+    _, public_key = _keypair()
+
+    response = client.post(
+        "/v1/me/biometrics/fingerprint",
+        json={"device_id": DEVICE_A, "public_key": public_key},
+        headers=auth_headers(access, **{"X-Pin-Token": _pin_token(access)}),
+    )
+    assert response.status_code == 201, response.text
+
+    token = login_verification("081234567890")
+
+    response = client.post(
+        "/v1/auth/biometric/challenge",
+        json={"verification_token": token, "device_id": DEVICE_B, "type": "FINGERPRINT"},
+        headers=headers(),
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "DEVICE_MISMATCH"
+
+    response = client.post(
+        "/v1/auth/biometric/challenge",
+        json={"verification_token": token, "type": "FINGERPRINT"},
+        headers=headers(),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["data"]["challenge_id"].startswith("chl_")
 
 
 def test_biometric_enrollment_and_login() -> None:
@@ -200,7 +235,7 @@ def test_biometric_settings_require_enrollment() -> None:
     assert response.json()["code"] == "NO_BIOMETRIC_REGISTERED"
 
 
-def _seed_kyc(phone: str = "081234567890") -> User:
+def _seed_kyc(phone: str = "081234567890", birth_date: date = BIRTH_DATE) -> User:
     with SessionLocal() as db:
         user = db.scalar(select(User).where(User.phone == phone))
         user.kyc_status = KycStatus.VERIFIED
@@ -208,12 +243,26 @@ def _seed_kyc(phone: str = "081234567890") -> User:
             KycProfile(
                 user_id=user.id,
                 nik_hash=sha256(f"{settings.JWT_SECRET}:nik:{NIK}"),
-                birth_date=BIRTH_DATE,
+                birth_date=birth_date,
             )
         )
         db.commit()
         db.refresh(user)
         return user
+
+
+def test_phone_recovery_rejects_underage_kyc() -> None:
+    register()
+    minor_birth = date(date.today().year - 16, 1, 1)
+    _seed_kyc(birth_date=minor_birth)
+
+    response = client.post(
+        "/v1/auth/phone-recovery",
+        json={"nik": NIK, "birth_date": minor_birth.isoformat()},
+        headers=headers(),
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "INVALID_DATE"
 
 
 def test_phone_recovery_happy_path() -> None:
